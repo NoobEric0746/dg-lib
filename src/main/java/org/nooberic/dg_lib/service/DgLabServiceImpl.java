@@ -83,6 +83,10 @@ public class DgLabServiceImpl implements DgLabService {
     @Override
     public void initialize() {
         initialized.compareAndSet(false, true);
+        channelAPainStrength = Config.getPainStrength(1);
+        channelBPainStrength = Config.getPainStrength(2);
+        channelASensationLowerLimit = Config.getSensationFloor(1);
+        channelBSensationLowerLimit = Config.getSensationFloor(2);
     }
 
     @Override
@@ -188,8 +192,10 @@ public class DgLabServiceImpl implements DgLabService {
         int clamped = Math.max(0, Math.min(200, value));
         if (normalizeChannel(channel) == 2) {
             channelBPainStrength = clamped;
+            Config.setPainStrength(2, clamped);
         } else {
             channelAPainStrength = clamped;
+            Config.setPainStrength(1, clamped);
         }
     }
 
@@ -203,8 +209,10 @@ public class DgLabServiceImpl implements DgLabService {
         int clamped = Math.max(0, Math.min(200, value));
         if (normalizeChannel(channel) == 2) {
             channelBSensationLowerLimit = clamped;
+            Config.setSensationFloor(2, clamped);
         } else {
             channelASensationLowerLimit = clamped;
+            Config.setSensationFloor(1, clamped);
         }
     }
 

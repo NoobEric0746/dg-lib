@@ -15,4 +15,19 @@ connectTimeoutMs = 8000
 logTraffic = false
 #Default channel for simple control command: A or B
 defaultChannel = "A"
+#Custom pain strength for channel A (0-200), used by addon modules
+#Range: 0 ~ 200
+painA = 142
+#Custom pain strength for channel B (0-200), used by addon modules
+#Range: 0 ~ 200
+painB = 119
+#Custom sensation floor for channel A (0-200), used by addon modules
+#Range: 0 ~ 200
+sensationFloorA = 72
+#Custom sensation floor for channel B (0-200), used by addon modules
+#Range: 0 ~ 200
+sensationFloorB = 43
+#Top-left HUD display mode: 0=normal, 1=hidden, 2=hide current strength only
+#Range: 0 ~ 2
+hudDisplayMode = 2
 

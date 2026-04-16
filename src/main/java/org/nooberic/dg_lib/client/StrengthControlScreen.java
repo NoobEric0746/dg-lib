@@ -8,6 +8,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.nooberic.dg_lib.Config;
 import org.nooberic.dg_lib.api.DgLibApi;
 import org.nooberic.dg_lib.service.DeviceStatus;
 import org.slf4j.Logger;
@@ -23,9 +24,11 @@ public class StrengthControlScreen extends Screen {
 
     private ChannelSliders channelA;
     private ChannelSliders channelB;
+    private Button pairButton;
+    private Button hudModeButton;
 
     public StrengthControlScreen() {
-        super(Component.literal("DG-LAB Strength Control"));
+        super(Component.literal("DG-LAB 控制面板"));
     }
 
     @Override
@@ -36,7 +39,7 @@ public class StrengthControlScreen extends Screen {
         DeviceStatus status = DgLibApi.get().getStatus();
         int columnWidth = 160;
         int sliderHeight = 20;
-        int topY = 58;
+        int topY = 62;
         int rowSpacing = 26;
         int gap = 24;
         int totalWidth = columnWidth * 2 + gap;
@@ -49,19 +52,27 @@ public class StrengthControlScreen extends Screen {
             status.getChannelBLimit(), status.getChannelBStrength(),
             DgLibApi.get().getPainStrength(2), DgLibApi.get().getSensationLowerLimit(2));
 
+        this.hudModeButton = this.addRenderableWidget(Button.builder(Component.empty(), button -> {
+            Config.cycleHudDisplayMode();
+            updateHudModeButtonText();
+        }).pos(8, 8).width(120).build());
+
         this.addRenderableWidget(channelA.maxSlider);
         this.addRenderableWidget(channelA.currentSlider);
-        this.addRenderableWidget(channelA.painSlider);
         this.addRenderableWidget(channelA.floorSlider);
+        this.addRenderableWidget(channelA.painSlider);
         this.addRenderableWidget(channelB.maxSlider);
         this.addRenderableWidget(channelB.currentSlider);
-        this.addRenderableWidget(channelB.painSlider);
         this.addRenderableWidget(channelB.floorSlider);
+        this.addRenderableWidget(channelB.painSlider);
 
-        this.addRenderableWidget(Button.builder(Component.literal("Close"), button -> this.minecraft.setScreen(null))
-            .pos(this.width / 2 - 50, this.height - 36)
-            .width(100)
+        this.pairButton = this.addRenderableWidget(Button.builder(Component.empty(), button -> onPairButtonClicked())
+            .pos(this.width / 2 - 65, this.height - 36)
+            .width(130)
             .build());
+
+        updatePairButtonText();
+        updateHudModeButtonText();
 
         LOGGER.info("[StrengthControlScreen] Channel A/B sliders initialized");
     }
@@ -76,14 +87,21 @@ public class StrengthControlScreen extends Screen {
         if (channelB != null) {
             channelB.setLiveValues(status.getChannelBLimit(), status.getChannelBStrength());
         }
+        updatePairButtonText();
+        updateHudModeButtonText();
         }
 
     @Override
     public void render(GuiGraphics guiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
         this.renderBackground(guiGraphics);
-        guiGraphics.drawCenteredString(this.font, "DG-LAB Strength Control", this.width / 2, 18, 0xFFFFFF);
-        guiGraphics.drawCenteredString(this.font, "A / B Channels", this.width / 2, 32, 0xAAAAAA);
-        guiGraphics.drawCenteredString(this.font, "Rows: Max(read-only), Current(read-only), Pain, Sensation Floor", this.width / 2, 44, 0x777777);
+        guiGraphics.drawCenteredString(this.font, "DG-LAB 控制面板", this.width / 2, 12, 0xFFFFFF);
+        guiGraphics.drawCenteredString(this.font, "强度上限请在手机端修改", this.width / 2, 28, 0x888888);
+        guiGraphics.drawCenteredString(this.font,
+            "感受阈值是能感到电流刺激的最小强度,痛感阈值是感觉到痛的最小强度",
+            this.width / 2, this.height - 62, 0x888888);
+        guiGraphics.drawCenteredString(this.font,
+            "模组可以读取这些值来实现更精准的强度控制(也可能没有这样做) : )",
+            this.width / 2, this.height - 50, 0x888888);
 
         super.render(guiGraphics, pMouseX, pMouseY, pPartialTick);
     }
@@ -114,13 +132,13 @@ public class StrengthControlScreen extends Screen {
                                int maxValue, int currentValue, int painValue, int floorValue) {
             this.channel = channel;
             this.tag = tag;
-            this.maxSlider = new ValueSlider(x, y, width, height, tag + " Max", maxValue, false, v -> {});
-                this.currentSlider = new ValueSlider(x, y + spacing, width, height, tag + " Current", currentValue, true,
+            this.maxSlider = new ValueSlider(x, y, width, height, tag + "上限", maxValue, false, v -> {});
+            this.currentSlider = new ValueSlider(x, y + spacing, width, height, tag + "当前强度", currentValue, true,
                     v -> DgLibApi.get().setStrength(channel, v));
-            this.painSlider = new ValueSlider(x, y + spacing * 2, width, height, tag + " Pain", painValue, true,
-                    v -> DgLibApi.get().setPainStrength(channel, v));
-            this.floorSlider = new ValueSlider(x, y + spacing * 3, width, height, tag + " Floor", floorValue, true,
+            this.floorSlider = new ValueSlider(x, y + spacing * 2, width, height, tag + "感受阈值", floorValue, true,
                     v -> DgLibApi.get().setSensationLowerLimit(channel, v));
+            this.painSlider = new ValueSlider(x, y + spacing * 3, width, height, tag + "痛感阈值", painValue, true,
+                v -> DgLibApi.get().setPainStrength(channel, v));
         }
 
         private void setLiveValues(int max, int current) {
@@ -133,6 +151,64 @@ public class StrengthControlScreen extends Screen {
 
     private interface OnChange {
         void onChange(int value);
+    }
+
+    private void onPairButtonClicked() {
+        if (DgLibApi.get().isPaired()) {
+            DgLibApi.get().disconnect();
+        } else {
+            DgLibApi.get().connect();
+            autoOpenQrUiAfterConnect();
+        }
+        updatePairButtonText();
+    }
+
+    private void updatePairButtonText() {
+        if (pairButton == null) {
+            return;
+        }
+        pairButton.setMessage(Component.literal(DgLibApi.get().isPaired() ? "取消配对" : "配对"));
+    }
+
+    private void updateHudModeButtonText() {
+        if (hudModeButton == null) {
+            return;
+        }
+        int mode = Config.getHudDisplayMode();
+        String text = switch (mode) {
+            case 1 -> "指示:隐藏";
+            case 2 -> "指示:隐藏强度";
+            default -> "指示:正常";
+        };
+        hudModeButton.setMessage(Component.literal(text));
+    }
+
+    private void autoOpenQrUiAfterConnect() {
+        Thread worker = new Thread(() -> {
+            for (int i = 0; i < 50; i++) {
+                DeviceStatus status = DgLibApi.get().getStatus();
+                String wsUrl = status.getWsUrl();
+                if (wsUrl != null && !wsUrl.isEmpty() && (wsUrl.startsWith("ws://") || wsUrl.startsWith("wss://"))) {
+                    Minecraft minecraft = Minecraft.getInstance();
+                    minecraft.execute(() -> {
+                        try {
+                            minecraft.setScreen(new QrCodeScreen(wsUrl));
+                        } catch (Throwable e) {
+                            LOGGER.warn("[StrengthControlScreen] Failed to open QR UI", e);
+                        }
+                    });
+                    return;
+                }
+                try {
+                    Thread.sleep(200L);
+                } catch (InterruptedException ignored) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+        }, "dg-lib-ui-qr-open");
+        worker.setDaemon(true);
+        worker.start();
     }
 
     private static final class ValueSlider extends AbstractSliderButton {

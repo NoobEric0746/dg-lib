@@ -252,6 +252,12 @@ api.setStrengthFeedbackListener(new StrengthFeedbackListener() {
 说明：
 - 当收到 APP 回传的 `strength-A+B+ALimit+BLimit` 消息时会触发回调。
 - 传入 `null` 可取消监听：`api.setStrengthFeedbackListener(null);`
+- `pain` / `sensation floor` 会持久化到 `config/dg_lib-common.toml`，重启游戏后仍保留。
+
+## 快捷键
+
+- `U`：打开 DG 强度控制界面
+- `I`：急停（将 A/B 强度置 0 并断开配对）
 
 #### 强度控制
 
