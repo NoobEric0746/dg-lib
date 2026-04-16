@@ -67,4 +67,9 @@ public final class DgLibApi implements IDgLibApi {
     public boolean setStrength(int channel, int value) {
         return service.setStrength(channel, value);
     }
+
+    @Override
+    public boolean playBasicWave(int channel, int seconds) {
+        return service.playBasicWave(channel, seconds);
+    }
 }

@@ -7,6 +7,7 @@
 - ✅ WebSocket 连接管理
 - ✅ 设备自动配对（扫描二维码）
 - ✅ 两通道强度控制（0-200 范围）
+- ✅ 基础波形发送（官方 clientMsg 格式）
 - ✅ 实时状态查询
 - ✅ 自动重连机制
 - ✅ 游戏内 GUI 界面
@@ -127,6 +128,27 @@
 
 ---
 
+### `/dg wave <channel> <seconds>`
+**功能**：发送最基础的官方格式波形（type = clientMsg）
+
+**使用**：
+```
+/dg wave 1 3
+/dg wave 2 5
+```
+
+**参数说明**：
+- `<channel>`：通道号（1 = 通道 A，2 = 通道 B）
+- `<seconds>`：持续时长（1-10 秒）
+
+**协议说明**：
+- 按官方 v2 文档格式发送：`type: "clientMsg"`
+- `channel` 使用 `A` / `B`
+- `message` 使用 `A:["HEX", ...]` 或 `B:["HEX", ...]`
+- 服务端会转发为 `pulse-...` 给 APP
+
+---
+
 ## Java API 调用
 
 如果你是模组开发者，可以在代码中直接使用 DG Lib 提供的 API。
@@ -190,6 +212,9 @@ boolean success = api.increaseStrength(1, 10);
 
 // 减少强度（返回 true 表示成功）
 boolean success = api.decreaseStrength(1, 10);
+
+// 发送基础波形（channel: 1=A, 2=B, seconds: 1-10）
+boolean success = api.playBasicWave(1, 5);
 ```
 
 #### 初始化和清理

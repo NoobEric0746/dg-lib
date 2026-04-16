@@ -175,6 +175,19 @@ public final class DgLibCommands {
                                             ctx.getSource().sendSuccess(() -> Component.literal(msg), false);
                                             return ok ? 1 : 0;
                                         }))))
+                .then(Commands.literal("wave")
+                        .then(Commands.argument("channel", IntegerArgumentType.integer(1, 2))
+                                .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 10))
+                                        .executes(ctx -> {
+                                            int channel = IntegerArgumentType.getInteger(ctx, "channel");
+                                            int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
+                                            boolean ok = DgLibApi.get().playBasicWave(channel, seconds);
+                                            String msg = ok
+                                                    ? String.format("§2[DG Lib]§r Basic wave sent to Ch%d for %ds.", channel, seconds)
+                                                    : "§c[DG Lib] Not paired or unavailable.";
+                                            ctx.getSource().sendSuccess(() -> Component.literal(msg), false);
+                                            return ok ? 1 : 0;
+                                        }))))
         );
     }
 }

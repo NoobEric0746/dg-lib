@@ -20,4 +20,6 @@ public interface DgLabService {
     boolean decreaseStrength(int channel, int delta);
 
     boolean setStrength(int channel, int value);
+
+    boolean playBasicWave(int channel, int seconds);
 }

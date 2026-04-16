@@ -18,6 +18,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class DgLabServiceImpl implements DgLabService {
     private static final Logger LOGGER = LogUtils.getLogger();
+    private static final String[] BASIC_WAVE_V3 = new String[]{
+            "0A0A0A0A00000000",
+            "0A0A0A0A14141414",
+            "0A0A0A0A28282828",
+            "0A0A0A0A3C3C3C3C",
+            "0A0A0A0A50505050",
+            "0A0A0A0A64646464",
+            "0A0A0A0A64646464",
+            "0A0A0A0A64646464",
+            "0A0A0A0A00000000",
+            "0A0A0A0A00000000",
+            "0A0A0A0A00000000"
+    };
 
     private final WsTransportClient transportClient;
     private final ScheduledExecutorService reconnectScheduler;
@@ -163,6 +176,18 @@ public class DgLabServiceImpl implements DgLabService {
             return false;
         }
         transportClient.sendText(DgProtocolCodec.encodeStrengthSet(clientId, targetId, normalizeChannel(channel), value));
+        return true;
+    }
+
+    @Override
+    public boolean playBasicWave(int channel, int seconds) {
+        if (!isPaired()) {
+            return false;
+        }
+        String channelName = normalizeChannel(channel) == 2 ? "B" : "A";
+        String payload = DgProtocolCodec.encodeClientWaveMessage(clientId, targetId, channelName, seconds, BASIC_WAVE_V3);
+        transportClient.sendText(payload);
+        LOGGER.info("DG-LAB basic wave queued: channel={}, seconds={}", channelName, Math.max(1, Math.min(10, seconds)));
         return true;
     }
 

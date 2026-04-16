@@ -1,6 +1,7 @@
 package org.nooberic.dg_lib.protocol;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -33,6 +34,19 @@ public final class DgProtocolCodec {
         return payload.toString();
     }
 
+    public static String encodeClientWaveMessage(String clientId, String targetId, String channel, int seconds, String[] waveFrames) {
+        JsonObject payload = new JsonObject();
+        payload.addProperty("type", "clientMsg");
+        payload.addProperty("clientId", clientId);
+        payload.addProperty("targetId", targetId);
+
+        String normalizedChannel = "B".equalsIgnoreCase(channel) ? "B" : "A";
+        payload.addProperty("channel", normalizedChannel);
+        payload.addProperty("time", Math.max(1, Math.min(10, seconds)));
+        payload.addProperty("message", normalizedChannel + ":" + toJsonArrayText(waveFrames));
+        return payload.toString();
+    }
+
     private static String encodeStrengthMessage(int type, String clientId, String targetId, int channel, int delta) {
         JsonObject payload = baseControlPayload(type, clientId, targetId);
         payload.addProperty("channel", channel);
@@ -52,6 +66,14 @@ public final class DgProtocolCodec {
 
     private static int clamp(int value) {
         return Math.max(0, Math.min(200, value));
+    }
+
+    private static String toJsonArrayText(String[] waveFrames) {
+        JsonArray arr = new JsonArray();
+        for (String frame : waveFrames) {
+            arr.add(frame);
+        }
+        return arr.toString();
     }
 
     private static String readString(JsonObject obj, String key) {
