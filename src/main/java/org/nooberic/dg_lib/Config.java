@@ -10,8 +10,8 @@ public class Config {
     private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
 
     private static final ForgeConfigSpec.ConfigValue<String> WS_URL = BUILDER
-        .comment("DG-LAB websocket endpoint, e.g. ws://127.0.0.1:9999")
-        .define("wsUrl", "ws://127.0.0.1:9999");
+        .comment("DG-LAB websocket endpoint. Recommended for mobile pairing: wss://ws.dungeon-lab.cn/ . For local mock backend use ws://<LAN-IP>:9999")
+        .define("wsUrl", "wss://ws.dungeon-lab.cn/");
 
     private static final ForgeConfigSpec.BooleanValue AUTO_RECONNECT = BUILDER
         .comment("Reconnect automatically when socket is disconnected")

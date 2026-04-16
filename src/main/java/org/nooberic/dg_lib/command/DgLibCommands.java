@@ -19,6 +19,13 @@ public final class DgLibCommands {
         return wsUrl != null && !wsUrl.isEmpty() && (wsUrl.startsWith("ws://") || wsUrl.startsWith("wss://"));
     }
 
+    private static boolean hasReadyQrUrl(DeviceStatus status) {
+        return status != null
+                && hasValidWsUrl(status.getWsUrl())
+                && status.getClientId() != null
+                && !status.getClientId().isEmpty();
+    }
+
     private static void openQrUiWithWsUrl(String wsUrl) {
         Minecraft minecraft = Minecraft.getInstance();
         minecraft.execute(() -> {
@@ -39,9 +46,9 @@ public final class DgLibCommands {
     private static void autoOpenQrUiAfterConnect() {
         Thread worker = new Thread(() -> {
             for (int i = 0; i < 50; i++) {
-                String wsUrl = DgLibApi.get().getStatus().getWsUrl();
-                if (hasValidWsUrl(wsUrl)) {
-                    openQrUiWithWsUrl(wsUrl);
+                DeviceStatus status = DgLibApi.get().getStatus();
+                if (hasReadyQrUrl(status)) {
+                    openQrUiWithWsUrl(status.getWsUrl());
                     return;
                 }
                 try {
@@ -117,17 +124,17 @@ public final class DgLibCommands {
                         }))
                 .then(Commands.literal("qr")
                         .executes(ctx -> {
-                            String wsUrl = DgLibApi.get().getStatus().getWsUrl();
-                            if (hasValidWsUrl(wsUrl)) {
+                        DeviceStatus status = DgLibApi.get().getStatus();
+                        if (hasReadyQrUrl(status)) {
                                 ctx.getSource().sendSuccess(
                                         () -> Component.literal("§2[DG Lib]§r Opening QR Code UI..."),
                                         false
                                 );
-                                openQrUiWithWsUrl(wsUrl);
+                        openQrUiWithWsUrl(status.getWsUrl());
                                 return 1;
                             } else {
                                 ctx.getSource().sendSuccess(
-                                        () -> Component.literal("§7[DG Lib] Waiting for connection... (state=" + DgLibApi.get().getConnectionState() + ")"),
+                            () -> Component.literal("§7[DG Lib] Waiting for session assignment... (state=" + DgLibApi.get().getConnectionState() + ")"),
                                         false
                                 );
                                 return 0;

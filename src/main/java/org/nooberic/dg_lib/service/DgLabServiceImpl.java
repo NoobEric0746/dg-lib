@@ -9,6 +9,7 @@ import org.nooberic.dg_lib.protocol.DgSocketMessage;
 import org.nooberic.dg_lib.util.QrCodeGenerator;
 import org.slf4j.Logger;
 
+import java.net.URI;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -78,21 +79,30 @@ public class DgLabServiceImpl implements DgLabService {
 
         manualDisconnect.set(false);
         state = ConnectionState.CONNECTING;
-        
-        // 只在第一次或断开后重新生成 clientId 和 wsUrl
-        if (generatedWsUrl.isEmpty()) {
-            String newClientId = QrCodeGenerator.generateClientId();
-            this.generatedWsUrl = QrCodeGenerator.generateWebSocketUrl(Config.wsUrl, newClientId);
-            this.wsUrl = generatedWsUrl;
-            this.clientId = ""; // 清空旧的 clientId，等待服务端返回
-            LOGGER.info("DG-LAB generated new session: clientId placeholder, wsUrl: {}", generatedWsUrl);
+
+        String baseWsUrl = Config.wsUrl == null ? "" : Config.wsUrl.trim();
+        clientId = "";
+        targetId = "";
+
+        if (isOfficialRelayEndpoint(baseWsUrl)) {
+            // Public relay mode: connect root endpoint, wait for bind(clientId), then build QR URL.
+            generatedWsUrl = normalizeBaseWsUrl(baseWsUrl);
+            wsUrl = "";
+            LOGGER.info("DG-LAB public relay mode, waiting for server-assigned clientId. connectUrl={}", generatedWsUrl);
         } else {
-            this.wsUrl = generatedWsUrl;
-            LOGGER.info("DG-LAB reusing existing wsUrl: {}", generatedWsUrl);
+            // Local/mock mode: keep path-based URL generation with local clientId.
+            if (generatedWsUrl.isEmpty()) {
+                String newClientId = QrCodeGenerator.generateClientId();
+                generatedWsUrl = QrCodeGenerator.generateWebSocketUrl(baseWsUrl, newClientId);
+                LOGGER.info("DG-LAB generated new local session wsUrl: {}", generatedWsUrl);
+            } else {
+                LOGGER.info("DG-LAB reusing existing wsUrl: {}", generatedWsUrl);
+            }
+            wsUrl = generatedWsUrl;
         }
-        
-        LOGGER.info("DG-LAB initiating connection to: {}", this.wsUrl);
-        transportClient.connect(this.wsUrl, Config.connectTimeoutMs);
+
+        LOGGER.info("DG-LAB initiating connection to: {}", generatedWsUrl);
+        transportClient.connect(generatedWsUrl, Config.connectTimeoutMs);
     }
 
     @Override
@@ -185,6 +195,10 @@ public class DgLabServiceImpl implements DgLabService {
                 
                 if (!cid.isEmpty()) {
                     clientId = cid;
+                    if (isOfficialRelayEndpoint(Config.wsUrl)) {
+                        wsUrl = QrCodeGenerator.generateWebSocketUrl(Config.wsUrl, clientId);
+                        LOGGER.info("DG-LAB public relay session URL ready: {}", wsUrl);
+                    }
                     LOGGER.info("DG-LAB received clientId: {}", clientId);
                 }
                 
@@ -248,6 +262,28 @@ public class DgLabServiceImpl implements DgLabService {
         }
     }
 
+    private boolean isOfficialRelayEndpoint(String endpoint) {
+        try {
+            String raw = endpoint == null ? "" : endpoint.trim();
+            if (raw.isEmpty()) {
+                return false;
+            }
+            URI uri = URI.create(raw);
+            String host = uri.getHost();
+            return host != null && host.equalsIgnoreCase("ws.dungeon-lab.cn");
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private String normalizeBaseWsUrl(String endpoint) {
+        String base = endpoint == null ? "" : endpoint.trim();
+        if (base.endsWith("/")) {
+            return base;
+        }
+        return base + "/";
+    }
+
     private class TransportListener implements WsTransportClient.Listener {
         @Override
         public void onOpen() {
@@ -259,7 +295,11 @@ public class DgLabServiceImpl implements DgLabService {
             channelBLimit = 0;
             targetId = "";
             LOGGER.info("DG-LAB WebSocket CONNECTED, waiting for server bind message...");
-            LOGGER.info("QR Code URL ready: {}", wsUrl);
+            if (!wsUrl.isEmpty()) {
+                LOGGER.info("QR Code URL ready: {}", wsUrl);
+            } else {
+                LOGGER.info("QR Code URL pending: waiting for bind(clientId)");
+            }
         }
 
         @Override

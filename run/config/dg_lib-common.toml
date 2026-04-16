@@ -1,5 +1,5 @@
-#DG-LAB websocket endpoint, e.g. ws://127.0.0.1:9999
-wsUrl = "ws://127.0.0.1:9999"
+#DG-LAB websocket endpoint. Recommended for mobile pairing: wss://ws.dungeon-lab.cn/ . For local mock backend use ws://<LAN-IP>:9999
+wsUrl = "wss://ws.dungeon-lab.cn/"
 #Reconnect automatically when socket is disconnected
 autoReconnect = true
 #Base reconnect delay in milliseconds

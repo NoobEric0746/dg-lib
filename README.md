@@ -236,16 +236,19 @@ public class MyModIntegration {
 
 默认连接地址配置在游戏配置目录中，路径为：
 ```
-config/dg-lib.toml
+config/dg_lib-common.toml
 ```
 
 ### 修改连接地址
 
-编辑 `dg-lib.toml` 文件，修改以下配置：
+编辑 `dg_lib-common.toml` 文件，修改以下配置：
 ```toml
-[dg_lib]
-ws_url = "ws://127.0.0.1:9999"
+wsUrl = "wss://ws.dungeon-lab.cn/"
 ```
+
+推荐连接方案：
+- 手机扫码优先使用公网端点：`wss://ws.dungeon-lab.cn/`（与官方网页示例一致）
+- 本地 mock 后端调试使用：`ws://你的局域网IP:9999`（不要使用 `127.0.0.1`）
 
 ## 事件和回调
 
