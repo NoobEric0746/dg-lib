@@ -11,6 +11,7 @@ import net.minecraft.server.level.ServerPlayer;
 import org.nooberic.dg_lib.api.DgLibApi;
 import org.nooberic.dg_lib.client.QrCodeScreen;
 import org.nooberic.dg_lib.client.StrengthControlScreen;
+import org.nooberic.dg_lib.multiplayer.CoyoteStatusSnapshot;
 import org.nooberic.dg_lib.multiplayer.DgServerCoyoteApi;
 import org.nooberic.dg_lib.multiplayer.ServerCoyote;
 import org.nooberic.dg_lib.service.DeviceStatus;
@@ -104,10 +105,12 @@ public final class DgLibCommands {
                             String state = DgLibApi.get().getConnectionState().toString();
                             String paired = DgLibApi.get().isPaired() ? "§aYES" : "§cNO";
                             String statusLine = String.format(
-                                    "§2[DG Lib]§r State: %s | Paired: %s | Client: %s | Target: %s | Strength A: %d/%d | Strength B: %d/%d",
+                                    "§2[DG Lib]§r State: %s | Paired: %s | Client: %s | Target: %s | Strength A: %d/%d | Strength B: %d/%d | Pain A/B: %d/%d | Floor A/B: %d/%d",
                                     state, paired, status.getClientId(), status.getTargetId(),
                                     status.getChannelAStrength(), status.getChannelALimit(),
-                                    status.getChannelBStrength(), status.getChannelBLimit()
+                                    status.getChannelBStrength(), status.getChannelBLimit(),
+                                    status.getChannelAPainStrength(), status.getChannelBPainStrength(),
+                                    status.getChannelASensationLowerLimit(), status.getChannelBSensationLowerLimit()
                             );
                             ctx.getSource().sendSuccess(() -> Component.literal(statusLine), false);
                             if (!status.getLastErrorCode().isEmpty()) {
@@ -183,6 +186,29 @@ public final class DgLibCommands {
 
         dispatcher.register(Commands.literal("dg_server")
                 .requires(source -> source.hasPermission(2))
+            .then(Commands.literal("status")
+                .then(Commands.argument("player", EntityArgument.player())
+                    .executes(ctx -> {
+                        ServerPlayer target = EntityArgument.getPlayer(ctx, "player");
+                        ServerCoyote coyote = DgServerCoyoteApi.get().getCoyote(target);
+                        handleServerFuture(
+                            ctx.getSource(),
+                            coyote.refreshStatus(),
+                            snapshotObj -> {
+                            CoyoteStatusSnapshot snapshot = (CoyoteStatusSnapshot) snapshotObj;
+                            String paired = snapshot.isPaired() ? "§aYES" : "§cNO";
+                            return String.format(
+                                "§2[DG Server]§r %s | Paired: %s | Strength A: %d/%d | Strength B: %d/%d | Pain A/B: %d/%d | Floor A/B: %d/%d",
+                                target.getGameProfile().getName(), paired,
+                                snapshot.getChannelAStrength(), snapshot.getChannelALimit(),
+                                snapshot.getChannelBStrength(), snapshot.getChannelBLimit(),
+                                snapshot.getChannelAPainStrength(), snapshot.getChannelBPainStrength(),
+                                snapshot.getChannelASensationLowerLimit(), snapshot.getChannelBSensationLowerLimit()
+                            );
+                            }
+                        );
+                        return 1;
+                    })))
                 .then(Commands.literal("set")
                         .then(Commands.argument("player", EntityArgument.player())
                                 .then(Commands.argument("channel", IntegerArgumentType.integer(1, 2))

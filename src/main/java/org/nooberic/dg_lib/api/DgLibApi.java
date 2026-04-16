@@ -65,6 +65,26 @@ public final class DgLibApi implements IDgLibApi {
     }
 
     @Override
+    public int getPainStrength(int channel) {
+        return service.getPainStrength(channel);
+    }
+
+    @Override
+    public void setPainStrength(int channel, int value) {
+        service.setPainStrength(channel, value);
+    }
+
+    @Override
+    public int getSensationLowerLimit(int channel) {
+        return service.getSensationLowerLimit(channel);
+    }
+
+    @Override
+    public void setSensationLowerLimit(int channel, int value) {
+        service.setSensationLowerLimit(channel, value);
+    }
+
+    @Override
     public void setStrengthFeedbackListener(StrengthFeedbackListener listener) {
         service.setStrengthFeedbackListener(listener);
     }

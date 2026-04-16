@@ -19,6 +19,14 @@ public interface DgLabService {
 
     int getStrengthLimit(int channel);
 
+    int getPainStrength(int channel);
+
+    void setPainStrength(int channel, int value);
+
+    int getSensationLowerLimit(int channel);
+
+    void setSensationLowerLimit(int channel, int value);
+
     void setStrengthFeedbackListener(StrengthFeedbackListener listener);
 
     boolean increaseStrength(int channel, int delta);

@@ -52,7 +52,7 @@
 **输出示例**：
 ```
 [DG Lib] State: PAIRED | Paired: YES | Client: deac65d2 | Target: sd73sjgf
-        | Strength A: 50/200 | Strength B: 75/200
+    | Strength A: 50/200 | Strength B: 75/200 | Pain A/B: 30/40 | Floor A/B: 10/12
 ```
 
 **状态值说明**：
@@ -126,6 +126,10 @@
 - 成功：`[DG Lib] Set Ch1 to 150 sent.`
 - 失败：`[DG Lib] Not paired or unavailable.`
 
+**安全值处理**：
+- 当已收到设备回传的通道安全上限后，若设置值超过该上限，会自动下调到安全上限再发送。
+- 不会因为超限而直接丢弃操作。
+
 ---
 
 ### `/dg wave <channel> <seconds>`
@@ -159,6 +163,10 @@
 #### `/dg_server wave <player> <channel> <seconds>`
 - 示例：`/dg_server wave Steve 2 5`
 - 含义：让 `Steve` 的通道 2 播放 5 秒基础波形。
+
+#### `/dg_server status <player>`
+- 示例：`/dg_server status Steve`
+- 含义：通过网络向 `Steve` 客户端请求最新状态并回传显示（含强度、上限、痛感强度、感受下限）。
 
 说明：
 - 指令通过服务端 -> 目标玩家客户端网络请求执行，再回传结果。
@@ -220,6 +228,12 @@ String lastError = status.getLastErrorCode();         // 最后一条错误
 // 快速读取通道当前强度和上限
 int currentA = api.getCurrentStrength(1);             // 通道 A 当前强度
 int limitA = api.getStrengthLimit(1);                 // 通道 A 当前上限
+
+// UI 附加参数（供附属模组读取/写入）
+int painA = api.getPainStrength(1);                   // 通道 A 痛感强度
+int floorA = api.getSensationLowerLimit(1);           // 通道 A 感受下限
+api.setPainStrength(1, 60);
+api.setSensationLowerLimit(1, 20);
 ```
 
 #### 强度回传监听（实时）

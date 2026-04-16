@@ -15,6 +15,10 @@ public class DgC2SClientOpResponsePacket {
     private final int channelBStrength;
     private final int channelALimit;
     private final int channelBLimit;
+    private final int channelAPainStrength;
+    private final int channelBPainStrength;
+    private final int channelASensationLowerLimit;
+    private final int channelBSensationLowerLimit;
     private final String error;
 
     public DgC2SClientOpResponsePacket(
@@ -25,6 +29,10 @@ public class DgC2SClientOpResponsePacket {
             int channelBStrength,
             int channelALimit,
             int channelBLimit,
+                int channelAPainStrength,
+                int channelBPainStrength,
+                int channelASensationLowerLimit,
+                int channelBSensationLowerLimit,
             String error
     ) {
         this.requestId = requestId;
@@ -34,6 +42,10 @@ public class DgC2SClientOpResponsePacket {
         this.channelBStrength = channelBStrength;
         this.channelALimit = channelALimit;
         this.channelBLimit = channelBLimit;
+        this.channelAPainStrength = channelAPainStrength;
+        this.channelBPainStrength = channelBPainStrength;
+        this.channelASensationLowerLimit = channelASensationLowerLimit;
+        this.channelBSensationLowerLimit = channelBSensationLowerLimit;
         this.error = error == null ? "" : error;
     }
 
@@ -65,6 +77,22 @@ public class DgC2SClientOpResponsePacket {
         return channelBLimit;
     }
 
+    public int getChannelAPainStrength() {
+        return channelAPainStrength;
+    }
+
+    public int getChannelBPainStrength() {
+        return channelBPainStrength;
+    }
+
+    public int getChannelASensationLowerLimit() {
+        return channelASensationLowerLimit;
+    }
+
+    public int getChannelBSensationLowerLimit() {
+        return channelBSensationLowerLimit;
+    }
+
     public String getError() {
         return error;
     }
@@ -77,6 +105,10 @@ public class DgC2SClientOpResponsePacket {
         buf.writeInt(msg.channelBStrength);
         buf.writeInt(msg.channelALimit);
         buf.writeInt(msg.channelBLimit);
+        buf.writeInt(msg.channelAPainStrength);
+        buf.writeInt(msg.channelBPainStrength);
+        buf.writeInt(msg.channelASensationLowerLimit);
+        buf.writeInt(msg.channelBSensationLowerLimit);
         buf.writeUtf(msg.error);
     }
 
@@ -85,6 +117,10 @@ public class DgC2SClientOpResponsePacket {
                 buf.readLong(),
                 buf.readBoolean(),
                 buf.readBoolean(),
+                buf.readInt(),
+                buf.readInt(),
+                buf.readInt(),
+                buf.readInt(),
                 buf.readInt(),
                 buf.readInt(),
                 buf.readInt(),

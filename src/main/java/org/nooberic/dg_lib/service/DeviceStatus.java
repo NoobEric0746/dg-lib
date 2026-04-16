@@ -7,6 +7,10 @@ public class DeviceStatus {
     private final int channelBStrength;
     private final int channelALimit;
     private final int channelBLimit;
+    private final int channelAPainStrength;
+    private final int channelBPainStrength;
+    private final int channelASensationLowerLimit;
+    private final int channelBSensationLowerLimit;
     private final String lastErrorCode;
     private final String wsUrl;
 
@@ -17,6 +21,10 @@ public class DeviceStatus {
             int channelBStrength,
             int channelALimit,
             int channelBLimit,
+                int channelAPainStrength,
+                int channelBPainStrength,
+                int channelASensationLowerLimit,
+                int channelBSensationLowerLimit,
             String lastErrorCode,
             String wsUrl
     ) {
@@ -26,12 +34,16 @@ public class DeviceStatus {
         this.channelBStrength = channelBStrength;
         this.channelALimit = channelALimit;
         this.channelBLimit = channelBLimit;
+        this.channelAPainStrength = channelAPainStrength;
+        this.channelBPainStrength = channelBPainStrength;
+        this.channelASensationLowerLimit = channelASensationLowerLimit;
+        this.channelBSensationLowerLimit = channelBSensationLowerLimit;
         this.lastErrorCode = lastErrorCode;
         this.wsUrl = wsUrl;
     }
 
     public static DeviceStatus empty() {
-        return new DeviceStatus("", "", 0, 0, 0, 0, "", "");
+        return new DeviceStatus("", "", 0, 0, 0, 0, 0, 0, 0, 0, "", "");
     }
 
     public String getClientId() {
@@ -56,6 +68,22 @@ public class DeviceStatus {
 
     public int getChannelBLimit() {
         return channelBLimit;
+    }
+
+    public int getChannelAPainStrength() {
+        return channelAPainStrength;
+    }
+
+    public int getChannelBPainStrength() {
+        return channelBPainStrength;
+    }
+
+    public int getChannelASensationLowerLimit() {
+        return channelASensationLowerLimit;
+    }
+
+    public int getChannelBSensationLowerLimit() {
+        return channelBSensationLowerLimit;
     }
 
     public String getLastErrorCode() {

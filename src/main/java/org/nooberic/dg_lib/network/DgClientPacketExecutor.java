@@ -58,6 +58,10 @@ public final class DgClientPacketExecutor {
                 status.getChannelBStrength(),
                 status.getChannelALimit(),
                 status.getChannelBLimit(),
+                status.getChannelAPainStrength(),
+                status.getChannelBPainStrength(),
+                status.getChannelASensationLowerLimit(),
+                status.getChannelBSensationLowerLimit(),
                 error
         );
         DgNetworking.sendToServer(response);

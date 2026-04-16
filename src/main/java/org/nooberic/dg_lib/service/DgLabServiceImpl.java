@@ -1,6 +1,8 @@
 package org.nooberic.dg_lib.service;
 
 import com.mojang.logging.LogUtils;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 import org.nooberic.dg_lib.Config;
 import org.nooberic.dg_lib.client.JdkWsTransportClient;
 import org.nooberic.dg_lib.client.WsTransportClient;
@@ -47,6 +49,10 @@ public class DgLabServiceImpl implements DgLabService {
     private volatile int channelBStrength;
     private volatile int channelALimit;
     private volatile int channelBLimit;
+    private volatile int channelAPainStrength;
+    private volatile int channelBPainStrength;
+    private volatile int channelASensationLowerLimit;
+    private volatile int channelBSensationLowerLimit;
     private volatile String lastErrorCode;
     private volatile StrengthFeedbackListener strengthFeedbackListener;
 
@@ -66,6 +72,10 @@ public class DgLabServiceImpl implements DgLabService {
         this.targetId = "";
         this.wsUrl = "";
         this.lastErrorCode = "";
+        this.channelAPainStrength = 0;
+        this.channelBPainStrength = 0;
+        this.channelASensationLowerLimit = 0;
+        this.channelBSensationLowerLimit = 0;
         this.strengthFeedbackListener = null;
         this.transportClient.setListener(new TransportListener());
     }
@@ -149,6 +159,10 @@ public class DgLabServiceImpl implements DgLabService {
                 channelBStrength,
                 channelALimit,
                 channelBLimit,
+            channelAPainStrength,
+            channelBPainStrength,
+            channelASensationLowerLimit,
+            channelBSensationLowerLimit,
                 lastErrorCode,
                 wsUrl
         );
@@ -162,6 +176,36 @@ public class DgLabServiceImpl implements DgLabService {
     @Override
     public int getStrengthLimit(int channel) {
         return normalizeChannel(channel) == 2 ? channelBLimit : channelALimit;
+    }
+
+    @Override
+    public int getPainStrength(int channel) {
+        return normalizeChannel(channel) == 2 ? channelBPainStrength : channelAPainStrength;
+    }
+
+    @Override
+    public void setPainStrength(int channel, int value) {
+        int clamped = Math.max(0, Math.min(200, value));
+        if (normalizeChannel(channel) == 2) {
+            channelBPainStrength = clamped;
+        } else {
+            channelAPainStrength = clamped;
+        }
+    }
+
+    @Override
+    public int getSensationLowerLimit(int channel) {
+        return normalizeChannel(channel) == 2 ? channelBSensationLowerLimit : channelASensationLowerLimit;
+    }
+
+    @Override
+    public void setSensationLowerLimit(int channel, int value) {
+        int clamped = Math.max(0, Math.min(200, value));
+        if (normalizeChannel(channel) == 2) {
+            channelBSensationLowerLimit = clamped;
+        } else {
+            channelASensationLowerLimit = clamped;
+        }
     }
 
     @Override
@@ -192,7 +236,12 @@ public class DgLabServiceImpl implements DgLabService {
         if (!isPaired()) {
             return false;
         }
-        transportClient.sendText(DgProtocolCodec.encodeStrengthSet(clientId, targetId, normalizeChannel(channel), value));
+        int normalizedChannel = normalizeChannel(channel);
+        int safeValue = clampToSafetyLimit(normalizedChannel, value);
+        transportClient.sendText(DgProtocolCodec.encodeStrengthSet(clientId, targetId, normalizedChannel, safeValue));
+        if (safeValue != value) {
+            LOGGER.info("DG-LAB setStrength adjusted by safety limit: channel={}, requested={}, applied={}", normalizedChannel, value, safeValue);
+        }
         return true;
     }
 
@@ -210,6 +259,15 @@ public class DgLabServiceImpl implements DgLabService {
 
     private int normalizeChannel(int channel) {
         return channel == 2 ? 2 : 1;
+    }
+
+    private int clampToSafetyLimit(int channel, int requested) {
+        int clampedRequested = Math.max(0, Math.min(200, requested));
+        int safetyLimit = channel == 2 ? channelBLimit : channelALimit;
+        if (safetyLimit > 0) {
+            return Math.min(clampedRequested, safetyLimit);
+        }
+        return clampedRequested;
     }
 
     private void scheduleReconnect() {
@@ -248,6 +306,7 @@ public class DgLabServiceImpl implements DgLabService {
                     targetId = tid;
                     state = ConnectionState.PAIRED;
                     LOGGER.info("DG-LAB paired successfully! targetId: {}", targetId);
+                    DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> org.nooberic.dg_lib.client.ClientPairingNotifier.onPairedSuccess());
                 } else if (msg.isEmpty() || "targetId".equals(msg)) {
                     LOGGER.info("DG-LAB awaiting APP binding (clientId assigned)");
                 } else {

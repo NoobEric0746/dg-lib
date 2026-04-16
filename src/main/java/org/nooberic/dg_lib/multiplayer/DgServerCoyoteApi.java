@@ -68,6 +68,10 @@ public final class DgServerCoyoteApi {
                 packet.getChannelBStrength(),
                 packet.getChannelALimit(),
                 packet.getChannelBLimit(),
+            packet.getChannelAPainStrength(),
+            packet.getChannelBPainStrength(),
+            packet.getChannelASensationLowerLimit(),
+            packet.getChannelBSensationLowerLimit(),
                 error,
                 System.currentTimeMillis()
         );
