@@ -1,0 +1,288 @@
+package org.nooberic.dg_lib.service;
+
+import com.mojang.logging.LogUtils;
+import org.nooberic.dg_lib.Config;
+import org.nooberic.dg_lib.client.JdkWsTransportClient;
+import org.nooberic.dg_lib.client.WsTransportClient;
+import org.nooberic.dg_lib.protocol.DgProtocolCodec;
+import org.nooberic.dg_lib.protocol.DgSocketMessage;
+import org.nooberic.dg_lib.util.QrCodeGenerator;
+import org.slf4j.Logger;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
+public class DgLabServiceImpl implements DgLabService {
+    private static final Logger LOGGER = LogUtils.getLogger();
+
+    private final WsTransportClient transportClient;
+    private final ScheduledExecutorService reconnectScheduler;
+    private final AtomicBoolean initialized;
+    private final AtomicBoolean manualDisconnect;
+    private final AtomicInteger reconnectAttempt;
+
+    private volatile ConnectionState state;
+    private volatile String clientId;
+    private volatile String generatedWsUrl;
+    private volatile String targetId;
+    private volatile String wsUrl;
+    private volatile int channelAStrength;
+    private volatile int channelBStrength;
+    private volatile int channelALimit;
+    private volatile int channelBLimit;
+    private volatile String lastErrorCode;
+
+    public DgLabServiceImpl() {
+        this(new JdkWsTransportClient());
+    }
+
+    public DgLabServiceImpl(WsTransportClient transportClient) {
+        this.transportClient = transportClient;
+        this.reconnectScheduler = Executors.newSingleThreadScheduledExecutor();
+        this.initialized = new AtomicBoolean(false);
+        this.manualDisconnect = new AtomicBoolean(false);
+        this.reconnectAttempt = new AtomicInteger(0);
+        this.state = ConnectionState.DISCONNECTED;
+        this.clientId = "";
+        this.generatedWsUrl = "";
+        this.targetId = "";
+        this.wsUrl = "";
+        this.lastErrorCode = "";
+        this.transportClient.setListener(new TransportListener());
+    }
+
+    @Override
+    public void initialize() {
+        initialized.compareAndSet(false, true);
+    }
+
+    @Override
+    public void shutdown() {
+        manualDisconnect.set(true);
+        transportClient.close();
+        state = ConnectionState.DISCONNECTED;
+    }
+
+    @Override
+    public void connect() {
+        if (!initialized.get()) {
+            initialize();
+        }
+        if (state == ConnectionState.CONNECTED || state == ConnectionState.CONNECTING || state == ConnectionState.PAIRED) {
+            LOGGER.info("DG-LAB already connecting or connected, state: {}", state);
+            return;
+        }
+
+        manualDisconnect.set(false);
+        state = ConnectionState.CONNECTING;
+        
+        // 只在第一次或断开后重新生成 clientId 和 wsUrl
+        if (generatedWsUrl.isEmpty()) {
+            String newClientId = QrCodeGenerator.generateClientId();
+            this.generatedWsUrl = QrCodeGenerator.generateWebSocketUrl(Config.wsUrl, newClientId);
+            this.wsUrl = generatedWsUrl;
+            this.clientId = ""; // 清空旧的 clientId，等待服务端返回
+            LOGGER.info("DG-LAB generated new session: clientId placeholder, wsUrl: {}", generatedWsUrl);
+        } else {
+            this.wsUrl = generatedWsUrl;
+            LOGGER.info("DG-LAB reusing existing wsUrl: {}", generatedWsUrl);
+        }
+        
+        LOGGER.info("DG-LAB initiating connection to: {}", this.wsUrl);
+        transportClient.connect(this.wsUrl, Config.connectTimeoutMs);
+    }
+
+    @Override
+    public void disconnect() {
+        manualDisconnect.set(true);
+        transportClient.close();
+        state = ConnectionState.DISCONNECTED;
+        generatedWsUrl = ""; // 清空 wsUrl，下次 connect 时会生成新的
+        clientId = "";
+        targetId = "";
+    }
+
+    @Override
+    public ConnectionState getConnectionState() {
+        return state;
+    }
+
+    @Override
+    public boolean isPaired() {
+        return state == ConnectionState.PAIRED && !clientId.isEmpty() && !targetId.isEmpty();
+    }
+
+    @Override
+    public DeviceStatus getStatus() {
+        return new DeviceStatus(
+                clientId,
+                targetId,
+                channelAStrength,
+                channelBStrength,
+                channelALimit,
+                channelBLimit,
+                lastErrorCode,
+                wsUrl
+        );
+    }
+
+    @Override
+    public boolean increaseStrength(int channel, int delta) {
+        if (!isPaired() || delta <= 0) {
+            return false;
+        }
+        transportClient.sendText(DgProtocolCodec.encodeStrengthIncrease(clientId, targetId, normalizeChannel(channel), delta));
+        return true;
+    }
+
+    @Override
+    public boolean decreaseStrength(int channel, int delta) {
+        if (!isPaired() || delta <= 0) {
+            return false;
+        }
+        transportClient.sendText(DgProtocolCodec.encodeStrengthDecrease(clientId, targetId, normalizeChannel(channel), delta));
+        return true;
+    }
+
+    @Override
+    public boolean setStrength(int channel, int value) {
+        if (!isPaired()) {
+            return false;
+        }
+        transportClient.sendText(DgProtocolCodec.encodeStrengthSet(clientId, targetId, normalizeChannel(channel), value));
+        return true;
+    }
+
+    private int normalizeChannel(int channel) {
+        return channel == 2 ? 2 : 1;
+    }
+
+    private void scheduleReconnect() {
+        if (!Config.autoReconnect || manualDisconnect.get()) {
+            return;
+        }
+
+        int attempt = reconnectAttempt.incrementAndGet();
+        long exponential = (long) Config.reconnectBaseMs * (1L << Math.min(8, attempt - 1));
+        long delayMs = Math.min(exponential, Config.reconnectMaxMs);
+
+        reconnectScheduler.schedule(this::connect, delayMs, TimeUnit.MILLISECONDS);
+        LOGGER.info("DG Lib reconnect scheduled in {} ms (attempt #{})", delayMs, attempt);
+    }
+
+    private void handleInboundMessage(String text) {
+        try {
+            DgSocketMessage message = DgProtocolCodec.decode(text);
+            String type = message.getType();
+
+            if ("bind".equals(type)) {
+                String msg = message.getMessage();
+                String cid = message.getClientId();
+                String tid = message.getTargetId();
+                
+                if (!cid.isEmpty()) {
+                    clientId = cid;
+                    LOGGER.info("DG-LAB received clientId: {}", clientId);
+                }
+                
+                if ("200".equals(msg)) {
+                    targetId = tid;
+                    state = ConnectionState.PAIRED;
+                    LOGGER.info("DG-LAB paired successfully! targetId: {}", targetId);
+                } else if (msg.isEmpty() || "targetId".equals(msg)) {
+                    LOGGER.info("DG-LAB awaiting APP binding (clientId assigned)");
+                } else {
+                    LOGGER.warn("DG-LAB bind message with unknown code: {}", msg);
+                }
+                return;
+            }
+
+            if ("break".equals(type)) {
+                targetId = "";
+                state = ConnectionState.CONNECTED;
+                LOGGER.info("DG-LAB connection broken, awaiting re-pair");
+                return;
+            }
+
+            if ("error".equals(type)) {
+                lastErrorCode = message.getMessage();
+                LOGGER.warn("DG-LAB error code: {}", lastErrorCode);
+                return;
+            }
+
+            if ("msg".equals(type)) {
+                parseStrength(message.getMessage());
+                LOGGER.debug("DG-LAB strength updated: A={}/{}, B={}/{}", 
+                    channelAStrength, channelALimit, channelBStrength, channelBLimit);
+            }
+        } catch (Exception ex) {
+            LOGGER.warn("Failed to parse DG-LAB socket payload", ex);
+        }
+    }
+
+    private void parseStrength(String messageBody) {
+        if (messageBody == null || !messageBody.startsWith("strength-")) {
+            return;
+        }
+
+        String raw = messageBody.substring("strength-".length());
+        String[] parts = raw.split("\\+");
+        if (parts.length < 4) {
+            return;
+        }
+
+        channelAStrength = parseIntSafe(parts[0]);
+        channelBStrength = parseIntSafe(parts[1]);
+        channelALimit = parseIntSafe(parts[2]);
+        channelBLimit = parseIntSafe(parts[3]);
+    }
+
+    private int parseIntSafe(String text) {
+        try {
+            return Integer.parseInt(text);
+        } catch (NumberFormatException ignored) {
+            return 0;
+        }
+    }
+
+    private class TransportListener implements WsTransportClient.Listener {
+        @Override
+        public void onOpen() {
+            state = ConnectionState.CONNECTED;
+            reconnectAttempt.set(0);
+            channelAStrength = 0;
+            channelBStrength = 0;
+            channelALimit = 0;
+            channelBLimit = 0;
+            targetId = "";
+            LOGGER.info("DG-LAB WebSocket CONNECTED, waiting for server bind message...");
+            LOGGER.info("QR Code URL ready: {}", wsUrl);
+        }
+
+        @Override
+        public void onText(String text) {
+            handleInboundMessage(text);
+        }
+
+        @Override
+        public void onClose(int statusCode, String reason) {
+            LOGGER.info("DG-LAB websocket closed: code={}, reason={}", statusCode, reason);
+            state = ConnectionState.DISCONNECTED;
+            if (!manualDisconnect.get()) {
+                scheduleReconnect();
+            }
+        }
+
+        @Override
+        public void onError(Throwable throwable) {
+            LOGGER.warn("DG-LAB websocket error", throwable);
+            state = ConnectionState.DISCONNECTED;
+            if (!manualDisconnect.get()) {
+                scheduleReconnect();
+            }
+        }
+    }
+}

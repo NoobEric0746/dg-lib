@@ -1,0 +1,18 @@
+#DG-LAB websocket endpoint, e.g. ws://127.0.0.1:9999
+wsUrl = "ws://127.0.0.1:9999"
+#Reconnect automatically when socket is disconnected
+autoReconnect = true
+#Base reconnect delay in milliseconds
+#Range: 200 ~ 120000
+reconnectBaseMs = 1000
+#Maximum reconnect delay in milliseconds
+#Range: 1000 ~ 300000
+reconnectMaxMs = 15000
+#Connection timeout in milliseconds
+#Range: 1000 ~ 120000
+connectTimeoutMs = 8000
+#Log inbound/outbound socket payloads
+logTraffic = false
+#Default channel for simple control command: A or B
+defaultChannel = "A"
+
