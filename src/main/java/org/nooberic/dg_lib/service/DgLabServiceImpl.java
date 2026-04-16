@@ -319,6 +319,7 @@ public class DgLabServiceImpl implements DgLabService {
                 targetId = "";
                 state = ConnectionState.CONNECTED;
                 LOGGER.info("DG-LAB connection broken, awaiting re-pair");
+                DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> org.nooberic.dg_lib.client.ClientDisconnectNotifier.onDeviceDisconnected());
                 return;
             }
 
