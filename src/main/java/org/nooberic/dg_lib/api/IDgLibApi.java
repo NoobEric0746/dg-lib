@@ -2,6 +2,7 @@ package org.nooberic.dg_lib.api;
 
 import org.nooberic.dg_lib.service.ConnectionState;
 import org.nooberic.dg_lib.service.DeviceStatus;
+import org.nooberic.dg_lib.service.StrengthFeedbackListener;
 
 public interface IDgLibApi {
     void initialize();
@@ -17,6 +18,12 @@ public interface IDgLibApi {
     boolean isPaired();
 
     DeviceStatus getStatus();
+
+    int getCurrentStrength(int channel);
+
+    int getStrengthLimit(int channel);
+
+    void setStrengthFeedbackListener(StrengthFeedbackListener listener);
 
     boolean increaseStrength(int channel, int delta);
 

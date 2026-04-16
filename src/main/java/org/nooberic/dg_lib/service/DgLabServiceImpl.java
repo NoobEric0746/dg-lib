@@ -48,6 +48,7 @@ public class DgLabServiceImpl implements DgLabService {
     private volatile int channelALimit;
     private volatile int channelBLimit;
     private volatile String lastErrorCode;
+    private volatile StrengthFeedbackListener strengthFeedbackListener;
 
     public DgLabServiceImpl() {
         this(new JdkWsTransportClient());
@@ -65,6 +66,7 @@ public class DgLabServiceImpl implements DgLabService {
         this.targetId = "";
         this.wsUrl = "";
         this.lastErrorCode = "";
+        this.strengthFeedbackListener = null;
         this.transportClient.setListener(new TransportListener());
     }
 
@@ -150,6 +152,21 @@ public class DgLabServiceImpl implements DgLabService {
                 lastErrorCode,
                 wsUrl
         );
+    }
+
+    @Override
+    public int getCurrentStrength(int channel) {
+        return normalizeChannel(channel) == 2 ? channelBStrength : channelAStrength;
+    }
+
+    @Override
+    public int getStrengthLimit(int channel) {
+        return normalizeChannel(channel) == 2 ? channelBLimit : channelALimit;
+    }
+
+    @Override
+    public void setStrengthFeedbackListener(StrengthFeedbackListener listener) {
+        this.strengthFeedbackListener = listener;
     }
 
     @Override
@@ -277,6 +294,15 @@ public class DgLabServiceImpl implements DgLabService {
         channelBStrength = parseIntSafe(parts[1]);
         channelALimit = parseIntSafe(parts[2]);
         channelBLimit = parseIntSafe(parts[3]);
+
+        StrengthFeedbackListener listener = strengthFeedbackListener;
+        if (listener != null) {
+            try {
+                listener.onStrengthFeedback(channelAStrength, channelBStrength, channelALimit, channelBLimit);
+            } catch (Exception ex) {
+                LOGGER.warn("DG-LAB strength feedback listener error", ex);
+            }
+        }
     }
 
     private int parseIntSafe(String text) {

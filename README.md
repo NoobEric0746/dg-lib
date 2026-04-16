@@ -199,7 +199,28 @@ int channelALimit = status.getChannelALimit();        // 通道 A 上限
 int channelBLimit = status.getChannelBLimit();        // 通道 B 上限
 String wsUrl = status.getWsUrl();                     // WebSocket 地址
 String lastError = status.getLastErrorCode();         // 最后一条错误
+
+// 快速读取通道当前强度和上限
+int currentA = api.getCurrentStrength(1);             // 通道 A 当前强度
+int limitA = api.getStrengthLimit(1);                 // 通道 A 当前上限
 ```
+
+#### 强度回传监听（实时）
+
+```java
+import org.nooberic.dg_lib.service.StrengthFeedbackListener;
+
+api.setStrengthFeedbackListener(new StrengthFeedbackListener() {
+    @Override
+    public void onStrengthFeedback(int aStrength, int bStrength, int aLimit, int bLimit) {
+        System.out.println("A=" + aStrength + "/" + aLimit + ", B=" + bStrength + "/" + bLimit);
+    }
+});
+```
+
+说明：
+- 当收到 APP 回传的 `strength-A+B+ALimit+BLimit` 消息时会触发回调。
+- 传入 `null` 可取消监听：`api.setStrengthFeedbackListener(null);`
 
 #### 强度控制
 

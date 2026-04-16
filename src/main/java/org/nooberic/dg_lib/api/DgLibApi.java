@@ -4,6 +4,7 @@ import org.nooberic.dg_lib.service.ConnectionState;
 import org.nooberic.dg_lib.service.DeviceStatus;
 import org.nooberic.dg_lib.service.DgLabService;
 import org.nooberic.dg_lib.service.DgLabServiceImpl;
+import org.nooberic.dg_lib.service.StrengthFeedbackListener;
 
 public final class DgLibApi implements IDgLibApi {
     private static final DgLibApi INSTANCE = new DgLibApi();
@@ -51,6 +52,21 @@ public final class DgLibApi implements IDgLibApi {
     @Override
     public DeviceStatus getStatus() {
         return service.getStatus();
+    }
+
+    @Override
+    public int getCurrentStrength(int channel) {
+        return service.getCurrentStrength(channel);
+    }
+
+    @Override
+    public int getStrengthLimit(int channel) {
+        return service.getStrengthLimit(channel);
+    }
+
+    @Override
+    public void setStrengthFeedbackListener(StrengthFeedbackListener listener) {
+        service.setStrengthFeedbackListener(listener);
     }
 
     @Override

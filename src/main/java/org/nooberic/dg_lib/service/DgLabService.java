@@ -15,6 +15,12 @@ public interface DgLabService {
 
     DeviceStatus getStatus();
 
+    int getCurrentStrength(int channel);
+
+    int getStrengthLimit(int channel);
+
+    void setStrengthFeedbackListener(StrengthFeedbackListener listener);
+
     boolean increaseStrength(int channel, int delta);
 
     boolean decreaseStrength(int channel, int delta);
