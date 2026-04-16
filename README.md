@@ -149,6 +149,23 @@
 
 ---
 
+### `/dg_server`（多人联机服务端指令）
+需要 OP 权限（权限等级 2），用于指定玩家并远程调用该玩家客户端 DG Lib。
+
+#### `/dg_server set <player> <channel> <value>`
+- 示例：`/dg_server set Steve 1 150`
+- 含义：设置 `Steve` 的通道 1 强度为 150。
+
+#### `/dg_server wave <player> <channel> <seconds>`
+- 示例：`/dg_server wave Steve 2 5`
+- 含义：让 `Steve` 的通道 2 播放 5 秒基础波形。
+
+说明：
+- 指令通过服务端 -> 目标玩家客户端网络请求执行，再回传结果。
+- 若目标玩家未配对或本地 DG Lib 不可用，指令会返回失败提示。
+
+---
+
 ## Java API 调用
 
 如果你是模组开发者，可以在代码中直接使用 DG Lib 提供的 API。
@@ -275,6 +292,65 @@ public class MyModIntegration {
     }
 }
 ```
+
+## 多人联机服务端 API
+
+支持在服务端通过 `ServerPlayer` 获取该玩家对应的 Coyote 远程对象，操作会通过网络下发到该玩家客户端的 DG Lib 执行，再把结果回传服务端。
+
+### 获取玩家 Coyote 对象
+
+```java
+import net.minecraft.server.level.ServerPlayer;
+import org.nooberic.dg_lib.multiplayer.DgServerCoyoteApi;
+import org.nooberic.dg_lib.multiplayer.ServerCoyote;
+
+ServerPlayer targetPlayer = ...;
+ServerCoyote coyote = DgServerCoyoteApi.get().getCoyote(targetPlayer);
+```
+
+### 常用操作
+
+```java
+// 设置强度（异步）
+coyote.setStrength(1, 120).thenAccept(success -> {
+    if (success) {
+        // 已下发并执行成功
+    }
+});
+
+// 查询当前强度/上限（会向客户端请求并刷新）
+coyote.getCurrentStrength(1).thenAccept(aStrength -> {
+    // A 通道当前强度
+});
+
+coyote.getStrengthLimit(1).thenAccept(aLimit -> {
+    // A 通道当前上限
+});
+
+// 获取完整状态快照
+coyote.refreshStatus().thenAccept(snapshot -> {
+    int a = snapshot.getChannelAStrength();
+    int b = snapshot.getChannelBStrength();
+    int aLimit = snapshot.getChannelALimit();
+    int bLimit = snapshot.getChannelBLimit();
+});
+```
+
+### 已覆盖的联机关键点
+
+- Player -> Coyote 映射缓存（服务端维护）
+- 请求-响应关联（requestId）
+- 响应来源校验（必须由目标玩家客户端返回）
+- 超时保护（默认 5 秒）
+- 玩家下线自动清理映射与挂起请求
+
+### 建议你在业务层补充的策略
+
+- 权限控制：只允许特定身份/关系的玩家发起远程控制
+- 同意机制：被控玩家是否允许被谁控制
+- 频率限制：避免短时间高频调度造成刷包
+- 失败重试：对超时和离线进行可控重试
+- 审计日志：记录谁在什么时候控制了谁
 
 ## 配置
 

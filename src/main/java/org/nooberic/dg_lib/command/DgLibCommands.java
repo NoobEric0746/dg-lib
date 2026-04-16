@@ -5,11 +5,17 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import org.nooberic.dg_lib.api.DgLibApi;
 import org.nooberic.dg_lib.client.QrCodeScreen;
 import org.nooberic.dg_lib.client.StrengthControlScreen;
+import org.nooberic.dg_lib.multiplayer.DgServerCoyoteApi;
+import org.nooberic.dg_lib.multiplayer.ServerCoyote;
 import org.nooberic.dg_lib.service.DeviceStatus;
+
+import java.util.concurrent.CompletableFuture;
 
 public final class DgLibCommands {
     private DgLibCommands() {
@@ -63,20 +69,27 @@ public final class DgLibCommands {
         worker.start();
     }
 
+    private static <T> void handleServerFuture(CommandSourceStack source, CompletableFuture<T> future, java.util.function.Function<T, String> successText) {
+        future.whenComplete((result, throwable) -> {
+            source.getServer().execute(() -> {
+                if (throwable != null) {
+                    String err = throwable.getMessage() == null ? throwable.getClass().getSimpleName() : throwable.getMessage();
+                    source.sendFailure(Component.literal("§c[DG Server] Operation failed: " + err));
+                    return;
+                }
+                source.sendSuccess(() -> Component.literal(successText.apply(result)), false);
+            });
+        });
+    }
+
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("dg")
                 .then(Commands.literal("connect")
                         .executes(ctx -> {
                             DgLibApi.get().connect();
                             autoOpenQrUiAfterConnect();
-                            ctx.getSource().sendSuccess(
-                                    () -> Component.literal("§2[DG Lib]§r Connecting to DG-LAB..."),
-                                    false
-                            );
-                            ctx.getSource().sendSuccess(
-                                    () -> Component.literal("§7QR UI will open automatically. You can also use /dg qr."),
-                                    false
-                            );
+                            ctx.getSource().sendSuccess(() -> Component.literal("§2[DG Lib]§r Connecting to DG-LAB..."), false);
+                            ctx.getSource().sendSuccess(() -> Component.literal("§7QR UI will open automatically. You can also use /dg qr."), false);
                             return 1;
                         }))
                 .then(Commands.literal("disconnect")
@@ -107,45 +120,26 @@ public final class DgLibCommands {
                             boolean paired = DgLibApi.get().isPaired();
                             if (paired) {
                                 DeviceStatus status = DgLibApi.get().getStatus();
-                                ctx.getSource().sendSuccess(
-                                        () -> Component.literal(String.format(
-                                                "§2[DG Lib]§r Paired! Target: %s",
-                                                status.getTargetId()
-                                        )),
-                                        false
-                                );
+                                ctx.getSource().sendSuccess(() -> Component.literal(String.format("§2[DG Lib]§r Paired! Target: %s", status.getTargetId())), false);
                             } else {
-                                ctx.getSource().sendSuccess(
-                                        () -> Component.literal("§c[DG Lib] Not paired. Scan /dg qr with your phone."),
-                                        false
-                                );
+                                ctx.getSource().sendSuccess(() -> Component.literal("§c[DG Lib] Not paired. Scan /dg qr with your phone."), false);
                             }
                             return paired ? 1 : 0;
                         }))
                 .then(Commands.literal("qr")
                         .executes(ctx -> {
-                        DeviceStatus status = DgLibApi.get().getStatus();
-                        if (hasReadyQrUrl(status)) {
-                                ctx.getSource().sendSuccess(
-                                        () -> Component.literal("§2[DG Lib]§r Opening QR Code UI..."),
-                                        false
-                                );
-                        openQrUiWithWsUrl(status.getWsUrl());
+                            DeviceStatus status = DgLibApi.get().getStatus();
+                            if (hasReadyQrUrl(status)) {
+                                ctx.getSource().sendSuccess(() -> Component.literal("§2[DG Lib]§r Opening QR Code UI..."), false);
+                                openQrUiWithWsUrl(status.getWsUrl());
                                 return 1;
-                            } else {
-                                ctx.getSource().sendSuccess(
-                            () -> Component.literal("§7[DG Lib] Waiting for session assignment... (state=" + DgLibApi.get().getConnectionState() + ")"),
-                                        false
-                                );
-                                return 0;
                             }
+                            ctx.getSource().sendSuccess(() -> Component.literal("§7[DG Lib] Waiting for session assignment... (state=" + DgLibApi.get().getConnectionState() + ")"), false);
+                            return 0;
                         }))
                 .then(Commands.literal("ui")
                         .executes(ctx -> {
-                            ctx.getSource().sendSuccess(
-                                    () -> Component.literal("§2[DG Lib]§r Opening Strength Control UI..."),
-                                    false
-                            );
+                            ctx.getSource().sendSuccess(() -> Component.literal("§2[DG Lib]§r Opening Strength Control UI..."), false);
                             Minecraft minecraft = Minecraft.getInstance();
                             minecraft.execute(() -> {
                                 try {
@@ -153,10 +147,7 @@ public final class DgLibCommands {
                                 } catch (Throwable e) {
                                     e.printStackTrace();
                                     if (minecraft.player != null) {
-                                        minecraft.player.displayClientMessage(
-                                                Component.literal("§c[DG Lib] Failed to open Strength Control UI: " + e.getClass().getSimpleName()),
-                                                false
-                                        );
+                                        minecraft.player.displayClientMessage(Component.literal("§c[DG Lib] Failed to open Strength Control UI: " + e.getClass().getSimpleName()), false);
                                     }
                                 }
                             });
@@ -188,6 +179,48 @@ public final class DgLibCommands {
                                             ctx.getSource().sendSuccess(() -> Component.literal(msg), false);
                                             return ok ? 1 : 0;
                                         }))))
+        );
+
+        dispatcher.register(Commands.literal("dg_server")
+                .requires(source -> source.hasPermission(2))
+                .then(Commands.literal("set")
+                        .then(Commands.argument("player", EntityArgument.player())
+                                .then(Commands.argument("channel", IntegerArgumentType.integer(1, 2))
+                                        .then(Commands.argument("value", IntegerArgumentType.integer(0, 200))
+                                                .executes(ctx -> {
+                                                    ServerPlayer target = EntityArgument.getPlayer(ctx, "player");
+                                                    int channel = IntegerArgumentType.getInteger(ctx, "channel");
+                                                    int value = IntegerArgumentType.getInteger(ctx, "value");
+
+                                                    ServerCoyote coyote = DgServerCoyoteApi.get().getCoyote(target);
+                                                    handleServerFuture(
+                                                            ctx.getSource(),
+                                                            coyote.setStrength(channel, value),
+                                                            ok -> ok
+                                                                    ? String.format("§2[DG Server]§r Set %s Ch%d to %d sent.", target.getGameProfile().getName(), channel, value)
+                                                                    : String.format("§c[DG Server] %s operation rejected (not paired or unavailable).", target.getGameProfile().getName())
+                                                    );
+                                                    return 1;
+                                                })))))
+                .then(Commands.literal("wave")
+                        .then(Commands.argument("player", EntityArgument.player())
+                                .then(Commands.argument("channel", IntegerArgumentType.integer(1, 2))
+                                        .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 10))
+                                                .executes(ctx -> {
+                                                    ServerPlayer target = EntityArgument.getPlayer(ctx, "player");
+                                                    int channel = IntegerArgumentType.getInteger(ctx, "channel");
+                                                    int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
+
+                                                    ServerCoyote coyote = DgServerCoyoteApi.get().getCoyote(target);
+                                                    handleServerFuture(
+                                                            ctx.getSource(),
+                                                            coyote.playBasicWave(channel, seconds),
+                                                            ok -> ok
+                                                                    ? String.format("§2[DG Server]§r Basic wave sent to %s Ch%d for %ds.", target.getGameProfile().getName(), channel, seconds)
+                                                                    : String.format("§c[DG Server] %s wave rejected (not paired or unavailable).", target.getGameProfile().getName())
+                                                    );
+                                                    return 1;
+                                                })))))
         );
     }
 }
