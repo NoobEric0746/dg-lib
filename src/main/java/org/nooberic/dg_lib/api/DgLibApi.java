@@ -1,10 +1,14 @@
 package org.nooberic.dg_lib.api;
 
+import org.nooberic.dg_lib.pulse.Pulse;
+import org.nooberic.dg_lib.pulse.PulseRegistry;
 import org.nooberic.dg_lib.service.ConnectionState;
 import org.nooberic.dg_lib.service.DeviceStatus;
 import org.nooberic.dg_lib.service.DgLabService;
 import org.nooberic.dg_lib.service.DgLabServiceImpl;
 import org.nooberic.dg_lib.service.StrengthFeedbackListener;
+
+import java.util.Map;
 
 public final class DgLibApi implements IDgLibApi {
     private static final DgLibApi INSTANCE = new DgLibApi();
@@ -107,5 +111,25 @@ public final class DgLibApi implements IDgLibApi {
     @Override
     public boolean playBasicWave(int channel, int seconds) {
         return service.playBasicWave(channel, seconds);
+    }
+
+    @Override
+    public boolean playPulse(Pulse pulse) {
+        return service.playPulse(pulse);
+    }
+
+    @Override
+    public boolean registerPulse(String id, String pulseFileName) {
+        return PulseRegistry.registerFromResource(id, pulseFileName);
+    }
+
+    @Override
+    public Pulse getPulse(String id) {
+        return PulseRegistry.get(id);
+    }
+
+    @Override
+    public Map<String, Pulse> getAllPulses() {
+        return PulseRegistry.all();
     }
 }

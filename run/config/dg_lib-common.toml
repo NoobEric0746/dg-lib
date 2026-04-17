@@ -29,5 +29,5 @@ sensationFloorA = 72
 sensationFloorB = 43
 #Top-left HUD display mode: 0=normal, 1=hidden, 2=hide current strength only
 #Range: 0 ~ 2
-hudDisplayMode = 2
+hudDisplayMode = 0
 

@@ -1,5 +1,7 @@
 package org.nooberic.dg_lib.service;
 
+import org.nooberic.dg_lib.pulse.Pulse;
+
 public interface DgLabService {
     void initialize();
 
@@ -36,4 +38,6 @@ public interface DgLabService {
     boolean setStrength(int channel, int value);
 
     boolean playBasicWave(int channel, int seconds);
+
+    boolean playPulse(Pulse pulse);
 }

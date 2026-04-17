@@ -290,6 +290,10 @@ api.shutdown();
 ```java
 import org.nooberic.dg_lib.api.DgLibApi;
 import org.nooberic.dg_lib.service.ConnectionState;
+import org.nooberic.dg_lib.pulse.Pulse;
+import org.nooberic.dg_lib.pulse.PulseFileParser;
+
+import java.nio.file.Path;
 
 public class MyModIntegration {
     public void connectAndControl() {
@@ -304,6 +308,10 @@ public class MyModIntegration {
             // 设置强度
             api.setStrength(1, 100);  // 通道 A 设置为 100
             api.setStrength(2, 80);   // 通道 B 设置为 80
+
+            // 从 .pulse 文件解析并发送自定义波形
+            Pulse pulse = PulseFileParser.parse(Path.of("config/my-wave.pulse"));
+            api.playPulse(pulse);
             
             // 查询状态
             var status = api.getStatus();
@@ -311,6 +319,72 @@ public class MyModIntegration {
         }
     }
 }
+```
+
+### Pulse 波形文件与转换
+
+新增了一组类用于 `.pulse` -> `Pulse` -> Socket 数据转换：
+
+- `Pulse`：波形类型变量（name/channel/seconds/frames）
+- `PulseFileParser`：解析 `.pulse` 文件为 `Pulse`
+- `PulseSocketCodec`：将 `Pulse` 拆成 Socket 可发送数据
+- `PulseRegistry`：全局波形注册表（id -> Pulse）
+
+`src/main/resources/pulse/` 目录用于存放 `.pulse` 文件。
+
+支持两种 `.pulse` 格式：
+
+1. JSON
+
+```json
+{
+    "name": "my-wave",
+    "channel": "A",
+    "seconds": 5,
+    "frames": [
+        "0A0A0A0A00000000",
+        "0A0A0A0A14141414",
+        "0A0A0A0A64646464"
+    ]
+}
+```
+
+2. Key-Value
+
+```txt
+name=my-wave
+channel=A
+seconds=5
+frames=0A0A0A0A00000000,0A0A0A0A14141414,0A0A0A0A64646464
+```
+
+约束：
+- `channel`: `A` 或 `B`
+- `seconds`: 1-10（自动钳制）
+- `frames`: 每帧必须为 16 位 HEX 字符串
+
+### 波形注册机制（文件名 + 游戏内 id）
+
+```java
+import org.nooberic.dg_lib.api.DgLibApi;
+import org.nooberic.dg_lib.pulse.Pulse;
+
+DgLibApi api = DgLibApi.get();
+
+// 注册：文件在 src/main/resources/pulse/my_wave.pulse
+boolean ok = api.registerPulse("my_wave_id", "my_wave.pulse");
+
+// 全局获取（主模组和附属模组都可按 id 获取）
+Pulse pulse = api.getPulse("my_wave_id");
+if (pulse != null) {
+    api.playPulse(pulse);
+}
+```
+
+可获取全部已注册波形：
+
+```java
+var all = api.getAllPulses(); // Map<String, Pulse>
 ```
 
 ## 多人联机服务端 API

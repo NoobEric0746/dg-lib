@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import org.nooberic.dg_lib.Config;
+import org.nooberic.dg_lib.pulse.Pulse;
 import org.nooberic.dg_lib.client.JdkWsTransportClient;
 import org.nooberic.dg_lib.client.WsTransportClient;
 import org.nooberic.dg_lib.protocol.DgProtocolCodec;
@@ -263,6 +264,23 @@ public class DgLabServiceImpl implements DgLabService {
         transportClient.sendText(payload);
         LOGGER.info("DG-LAB basic wave queued: channel={}, seconds={}", channelName, Math.max(1, Math.min(10, seconds)));
         return true;
+    }
+
+    @Override
+    public boolean playPulse(Pulse pulse) {
+        if (!isPaired() || pulse == null) {
+            return false;
+        }
+        try {
+            String payload = DgProtocolCodec.encodePulseMessage(clientId, targetId, pulse);
+            transportClient.sendText(payload);
+            LOGGER.info("DG-LAB custom pulse queued: name={}, channel={}, seconds={}, frames={}",
+                    pulse.getName(), pulse.getChannel(), pulse.getSeconds(), pulse.getFrames().size());
+            return true;
+        } catch (Exception ex) {
+            LOGGER.warn("DG-LAB failed to queue custom pulse", ex);
+            return false;
+        }
     }
 
     private int normalizeChannel(int channel) {

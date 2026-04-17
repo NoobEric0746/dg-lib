@@ -1,8 +1,11 @@
 package org.nooberic.dg_lib.api;
 
+import org.nooberic.dg_lib.pulse.Pulse;
 import org.nooberic.dg_lib.service.ConnectionState;
 import org.nooberic.dg_lib.service.DeviceStatus;
 import org.nooberic.dg_lib.service.StrengthFeedbackListener;
+
+import java.util.Map;
 
 public interface IDgLibApi {
     void initialize();
@@ -40,4 +43,12 @@ public interface IDgLibApi {
     boolean setStrength(int channel, int value);
 
     boolean playBasicWave(int channel, int seconds);
+
+    boolean playPulse(Pulse pulse);
+
+    boolean registerPulse(String id, String pulseFileName);
+
+    Pulse getPulse(String id);
+
+    Map<String, Pulse> getAllPulses();
 }

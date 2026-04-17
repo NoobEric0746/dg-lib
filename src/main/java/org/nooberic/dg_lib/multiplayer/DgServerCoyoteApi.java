@@ -50,6 +50,14 @@ public final class DgServerCoyoteApi {
         return send(playerId, operation, channel, value).thenApply(snapshot -> snapshot.getError().isEmpty());
     }
 
+    public CompletableFuture<Boolean> sendAndMapSuccess(UUID playerId, DgClientOperation operation, String payload) {
+        return send(playerId, operation, 1, 0, payload).thenApply(snapshot -> snapshot.getError().isEmpty());
+    }
+
+    public CompletableFuture<Boolean> sendAndMapSuccess(UUID playerId, DgClientOperation operation, int value, String payload) {
+        return send(playerId, operation, 1, value, payload).thenApply(snapshot -> snapshot.getError().isEmpty());
+    }
+
     public void handleClientResponse(ServerPlayer sender, DgC2SClientOpResponsePacket packet) {
         PendingRequest req = pending.remove(packet.getRequestId());
         if (req == null) {
@@ -92,6 +100,10 @@ public final class DgServerCoyoteApi {
     }
 
     private CompletableFuture<CoyoteStatusSnapshot> send(UUID playerId, DgClientOperation operation, int channel, int value) {
+        return send(playerId, operation, channel, value, "");
+    }
+
+    private CompletableFuture<CoyoteStatusSnapshot> send(UUID playerId, DgClientOperation operation, int channel, int value, String payload) {
         ServerPlayer player = ServerLifecycleHooks.getCurrentServer() == null
                 ? null
                 : ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayer(playerId);
@@ -106,7 +118,7 @@ public final class DgServerCoyoteApi {
         CompletableFuture<CoyoteStatusSnapshot> future = new CompletableFuture<>();
         pending.put(requestId, new PendingRequest(playerId, future));
 
-        DgNetworking.sendToPlayer(player, new DgS2CClientOpRequestPacket(requestId, operation, normalizeChannel(channel), value));
+        DgNetworking.sendToPlayer(player, new DgS2CClientOpRequestPacket(requestId, operation, normalizeChannel(channel), value, payload));
 
         CompletableFuture.delayedExecutor(REQUEST_TIMEOUT_MS, TimeUnit.MILLISECONDS).execute(() -> {
             PendingRequest req = pending.remove(requestId);

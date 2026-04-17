@@ -2,6 +2,8 @@ package org.nooberic.dg_lib.network;
 
 import com.mojang.logging.LogUtils;
 import org.nooberic.dg_lib.api.DgLibApi;
+import org.nooberic.dg_lib.pulse.Pulse;
+import org.nooberic.dg_lib.pulse.PulseFrameResampler;
 import org.nooberic.dg_lib.service.DeviceStatus;
 import org.slf4j.Logger;
 
@@ -19,6 +21,7 @@ public final class DgClientPacketExecutor {
             DgClientOperation op = packet.getOperation();
             int channel = packet.getChannel();
             int value = packet.getValue();
+            String payload = packet.getPayload();
 
             switch (op) {
                 case QUERY_STATUS:
@@ -35,6 +38,23 @@ public final class DgClientPacketExecutor {
                     break;
                 case PLAY_BASIC_WAVE:
                     success = DgLibApi.get().playBasicWave(channel, value);
+                    break;
+                case PLAY_PULSE_BY_ID:
+                    Pulse pulse = DgLibApi.get().getPulse(payload);
+                    if (pulse == null) {
+                        error = "pulse-id-not-registered:" + payload;
+                        success = false;
+                    } else {
+                        Pulse runtimePulse = value > 0
+                                ? new Pulse(
+                                pulse.getName(),
+                                pulse.getChannel(),
+                                value,
+                                PulseFrameResampler.resize(pulse.getFrames(), value * 10)
+                        )
+                                : pulse;
+                        success = DgLibApi.get().playPulse(runtimePulse);
+                    }
                     break;
                 default:
                     error = "unsupported-operation";

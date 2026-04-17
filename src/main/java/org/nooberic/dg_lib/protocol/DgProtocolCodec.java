@@ -4,6 +4,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.nooberic.dg_lib.pulse.Pulse;
+import org.nooberic.dg_lib.pulse.PulseSocketCodec;
+import org.nooberic.dg_lib.pulse.PulseSocketData;
 
 public final class DgProtocolCodec {
     private DgProtocolCodec() {
@@ -45,6 +48,11 @@ public final class DgProtocolCodec {
         payload.addProperty("time", Math.max(1, Math.min(10, seconds)));
         payload.addProperty("message", normalizedChannel + ":" + toJsonArrayText(waveFrames));
         return payload.toString();
+    }
+
+    public static String encodePulseMessage(String clientId, String targetId, Pulse pulse) {
+        PulseSocketData data = PulseSocketCodec.toSocketData(pulse);
+        return encodeClientWaveMessage(clientId, targetId, data.channel(), data.seconds(), data.frames());
     }
 
     private static String encodeStrengthMessage(int type, String clientId, String targetId, int channel, int delta) {

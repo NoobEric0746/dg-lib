@@ -2,9 +2,12 @@ package org.nooberic.dg_lib.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.client.Minecraft;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -14,11 +17,16 @@ import org.nooberic.dg_lib.client.StrengthControlScreen;
 import org.nooberic.dg_lib.multiplayer.CoyoteStatusSnapshot;
 import org.nooberic.dg_lib.multiplayer.DgServerCoyoteApi;
 import org.nooberic.dg_lib.multiplayer.ServerCoyote;
+import org.nooberic.dg_lib.pulse.Pulse;
+import org.nooberic.dg_lib.pulse.PulseFrameResampler;
 import org.nooberic.dg_lib.service.DeviceStatus;
 
 import java.util.concurrent.CompletableFuture;
 
 public final class DgLibCommands {
+    private static final SuggestionProvider<CommandSourceStack> PULSE_ID_SUGGESTIONS =
+            (context, builder) -> SharedSuggestionProvider.suggest(DgLibApi.get().getAllPulses().keySet(), builder);
+
     private DgLibCommands() {
     }
 
@@ -170,18 +178,36 @@ public final class DgLibCommands {
                                             return ok ? 1 : 0;
                                         }))))
                 .then(Commands.literal("wave")
-                        .then(Commands.argument("channel", IntegerArgumentType.integer(1, 2))
+                        .then(Commands.argument("pulse_id", StringArgumentType.word())
+                                .suggests(PULSE_ID_SUGGESTIONS)
                                 .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 10))
-                                        .executes(ctx -> {
-                                            int channel = IntegerArgumentType.getInteger(ctx, "channel");
-                                            int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
-                                            boolean ok = DgLibApi.get().playBasicWave(channel, seconds);
-                                            String msg = ok
-                                                    ? String.format("§2[DG Lib]§r Basic wave sent to Ch%d for %ds.", channel, seconds)
-                                                    : "§c[DG Lib] Not paired or unavailable.";
-                                            ctx.getSource().sendSuccess(() -> Component.literal(msg), false);
-                                            return ok ? 1 : 0;
-                                        }))))
+                                .executes(ctx -> {
+                                    String pulseId = StringArgumentType.getString(ctx, "pulse_id");
+                                    int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
+                                    Pulse pulse = DgLibApi.get().getPulse(pulseId);
+                                    if (pulse == null) {
+                                        ctx.getSource().sendFailure(Component.literal("§c[DG Lib] Unknown pulse id: " + pulseId));
+                                        ctx.getSource().sendSuccess(
+                                                () -> Component.literal("§7Registered: " + String.join(", ", DgLibApi.get().getAllPulses().keySet())),
+                                                false
+                                        );
+                                        return 0;
+                                    }
+
+                                        int targetFrames = seconds * 10;
+                                        Pulse runtimePulse = new Pulse(
+                                            pulse.getName(),
+                                            pulse.getChannel(),
+                                            seconds,
+                                            PulseFrameResampler.resize(pulse.getFrames(), targetFrames)
+                                        );
+                                        boolean ok = DgLibApi.get().playPulse(runtimePulse);
+                                    String msg = ok
+                                            ? String.format("§2[DG Lib]§r Pulse '%s' triggered for %ds.", pulseId, seconds)
+                                            : "§c[DG Lib] Not paired or unavailable.";
+                                    ctx.getSource().sendSuccess(() -> Component.literal(msg), false);
+                                    return ok ? 1 : 0;
+                                    }))))
         );
 
         dispatcher.register(Commands.literal("dg_server")
@@ -230,23 +256,24 @@ public final class DgLibCommands {
                                                 })))))
                 .then(Commands.literal("wave")
                         .then(Commands.argument("player", EntityArgument.player())
-                                .then(Commands.argument("channel", IntegerArgumentType.integer(1, 2))
-                                        .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 10))
-                                                .executes(ctx -> {
-                                                    ServerPlayer target = EntityArgument.getPlayer(ctx, "player");
-                                                    int channel = IntegerArgumentType.getInteger(ctx, "channel");
-                                                    int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
+                                .then(Commands.argument("pulse_id", StringArgumentType.word())
+                            .suggests(PULSE_ID_SUGGESTIONS)
+                            .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 10))
+                                        .executes(ctx -> {
+                                            ServerPlayer target = EntityArgument.getPlayer(ctx, "player");
+                                            String pulseId = StringArgumentType.getString(ctx, "pulse_id");
+                                int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
 
-                                                    ServerCoyote coyote = DgServerCoyoteApi.get().getCoyote(target);
-                                                    handleServerFuture(
-                                                            ctx.getSource(),
-                                                            coyote.playBasicWave(channel, seconds),
-                                                            ok -> ok
-                                                                    ? String.format("§2[DG Server]§r Basic wave sent to %s Ch%d for %ds.", target.getGameProfile().getName(), channel, seconds)
-                                                                    : String.format("§c[DG Server] %s wave rejected (not paired or unavailable).", target.getGameProfile().getName())
-                                                    );
-                                                    return 1;
-                                                })))))
+                                            ServerCoyote coyote = DgServerCoyoteApi.get().getCoyote(target);
+                                            handleServerFuture(
+                                                    ctx.getSource(),
+                                    coyote.playPulseById(pulseId, seconds),
+                                                    ok -> ok
+                                        ? String.format("§2[DG Server]§r Pulse '%s' sent to %s for %ds.", pulseId, target.getGameProfile().getName(), seconds)
+                                                            : String.format("§c[DG Server] %s pulse '%s' rejected (not paired / id not found / unavailable).", target.getGameProfile().getName(), pulseId)
+                                            );
+                                            return 1;
+                            })))))
         );
     }
 }
