@@ -58,6 +58,10 @@ public final class DgServerCoyoteApi {
         return send(playerId, operation, 1, value, payload).thenApply(snapshot -> snapshot.getError().isEmpty());
     }
 
+    public CompletableFuture<Boolean> sendAndMapSuccess(UUID playerId, DgClientOperation operation, int channel, int value, String payload) {
+        return send(playerId, operation, channel, value, payload).thenApply(snapshot -> snapshot.getError().isEmpty());
+    }
+
     public void handleClientResponse(ServerPlayer sender, DgC2SClientOpResponsePacket packet) {
         PendingRequest req = pending.remove(packet.getRequestId());
         if (req == null) {

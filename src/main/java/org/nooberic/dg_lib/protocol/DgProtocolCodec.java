@@ -5,8 +5,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.nooberic.dg_lib.pulse.Pulse;
-import org.nooberic.dg_lib.pulse.PulseSocketCodec;
-import org.nooberic.dg_lib.pulse.PulseSocketData;
+
+import java.util.Locale;
 
 public final class DgProtocolCodec {
     private DgProtocolCodec() {
@@ -51,8 +51,15 @@ public final class DgProtocolCodec {
     }
 
     public static String encodePulseMessage(String clientId, String targetId, Pulse pulse) {
-        PulseSocketData data = PulseSocketCodec.toSocketData(pulse);
-        return encodeClientWaveMessage(clientId, targetId, data.channel(), data.seconds(), data.frames());
+        if (pulse == null) {
+            throw new IllegalArgumentException("Pulse cannot be null");
+        }
+        pulse.validate();
+        String channel = pulse.getChannel() == Pulse.Channel.B ? "B" : "A";
+        String[] frames = pulse.getFrames().stream()
+                .map(f -> f.toUpperCase(Locale.ROOT))
+                .toArray(String[]::new);
+        return encodeClientWaveMessage(clientId, targetId, channel, pulse.getSeconds(), frames);
     }
 
     private static String encodeStrengthMessage(int type, String clientId, String targetId, int channel, int delta) {

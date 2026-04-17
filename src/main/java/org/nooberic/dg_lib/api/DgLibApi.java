@@ -109,6 +109,24 @@ public final class DgLibApi implements IDgLibApi {
     }
 
     @Override
+    public boolean control(int channel, int strength, String pulseId, int seconds) {
+        Pulse pulse = PulseRegistry.get(pulseId);
+        if (pulse == null) {
+            return false;
+        }
+        int safeSeconds = Math.max(1, Math.min(10, seconds));
+        Pulse.Channel targetChannel = channel == 2 ? Pulse.Channel.B : Pulse.Channel.A;
+        Pulse runtimePulse = new Pulse(
+                pulse.getName(),
+                targetChannel,
+                safeSeconds,
+                pulse.getFrames()
+        );
+
+        return service.control(channel, strength, runtimePulse);
+    }
+
+    @Override
     public boolean playBasicWave(int channel, int seconds) {
         return service.playBasicWave(channel, seconds);
     }

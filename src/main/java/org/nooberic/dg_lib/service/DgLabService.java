@@ -37,6 +37,8 @@ public interface DgLabService {
 
     boolean setStrength(int channel, int value);
 
+    boolean control(int channel, int strength, Pulse pulse);
+
     boolean playBasicWave(int channel, int seconds);
 
     boolean playPulse(Pulse pulse);

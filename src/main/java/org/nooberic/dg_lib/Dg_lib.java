@@ -73,8 +73,8 @@ public class Dg_lib {
         }
 
         private static void registerBuiltInPulses() {
-            registerPulse("basic_breath", "basic_breath.pulse");
-            registerPulse("chaos", "chaos.pulse");
+            registerPulse("basic_breath", "basic_breath.frame");
+            registerPulse("chaos", "chaos.frame");
         }
 
         private static void registerPulse(String id, String fileName) {

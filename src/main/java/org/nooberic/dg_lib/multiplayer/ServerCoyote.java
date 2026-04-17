@@ -44,6 +44,11 @@ public class ServerCoyote {
         return api.sendAndMapSuccess(playerId, org.nooberic.dg_lib.network.DgClientOperation.PLAY_PULSE_BY_ID, seconds, pulseId);
     }
 
+    public CompletableFuture<Boolean> control(int channel, int strength, String pulseId, int seconds) {
+        String payload = strength + "|" + pulseId;
+        return api.sendAndMapSuccess(playerId, org.nooberic.dg_lib.network.DgClientOperation.CONTROL, channel, seconds, payload);
+    }
+
     public CompletableFuture<Integer> getCurrentStrength(int channel) {
         return refreshStatus().thenApply(snapshot -> snapshot.currentStrength(channel));
     }

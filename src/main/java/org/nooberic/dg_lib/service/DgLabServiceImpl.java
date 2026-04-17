@@ -13,14 +13,19 @@ import org.nooberic.dg_lib.util.QrCodeGenerator;
 import org.slf4j.Logger;
 
 import java.net.URI;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class DgLabServiceImpl implements DgLabService {
     private static final Logger LOGGER = LogUtils.getLogger();
+    private static final int CONTROL_RESET_RETRY_MAX = 20;
+    private static final long CONTROL_RESET_RETRY_DELAY_MS = 500L;
     private static final String[] BASIC_WAVE_V3 = new String[]{
             "0A0A0A0A00000000",
             "0A0A0A0A14141414",
@@ -37,9 +42,12 @@ public class DgLabServiceImpl implements DgLabService {
 
     private final WsTransportClient transportClient;
     private final ScheduledExecutorService reconnectScheduler;
+    private final ScheduledExecutorService controlScheduler;
     private final AtomicBoolean initialized;
     private final AtomicBoolean manualDisconnect;
     private final AtomicInteger reconnectAttempt;
+    private final AtomicLong controlToken;
+    private final ConcurrentMap<Integer, ActiveControlState> activeControls;
 
     private volatile ConnectionState state;
     private volatile String clientId;
@@ -64,9 +72,12 @@ public class DgLabServiceImpl implements DgLabService {
     public DgLabServiceImpl(WsTransportClient transportClient) {
         this.transportClient = transportClient;
         this.reconnectScheduler = Executors.newSingleThreadScheduledExecutor();
+        this.controlScheduler = Executors.newSingleThreadScheduledExecutor();
         this.initialized = new AtomicBoolean(false);
         this.manualDisconnect = new AtomicBoolean(false);
         this.reconnectAttempt = new AtomicInteger(0);
+        this.controlToken = new AtomicLong(1L);
+        this.activeControls = new ConcurrentHashMap<>();
         this.state = ConnectionState.DISCONNECTED;
         this.clientId = "";
         this.generatedWsUrl = "";
@@ -94,6 +105,9 @@ public class DgLabServiceImpl implements DgLabService {
     public void shutdown() {
         manualDisconnect.set(true);
         transportClient.close();
+        reconnectScheduler.shutdownNow();
+        controlScheduler.shutdownNow();
+        activeControls.clear();
         state = ConnectionState.DISCONNECTED;
     }
 
@@ -140,6 +154,7 @@ public class DgLabServiceImpl implements DgLabService {
         manualDisconnect.set(true);
         transportClient.close();
         state = ConnectionState.DISCONNECTED;
+        activeControls.clear();
         generatedWsUrl = ""; // 清空 wsUrl，下次 connect 时会生成新的
         clientId = "";
         targetId = "";
@@ -255,6 +270,40 @@ public class DgLabServiceImpl implements DgLabService {
     }
 
     @Override
+    public boolean control(int channel, int strength, Pulse pulse) {
+        if (pulse == null || !isPaired()) {
+            return false;
+        }
+
+        int normalizedChannel = normalizeChannel(channel);
+        int safeStrength = clampToSafetyLimit(normalizedChannel, strength);
+        int seconds = Math.max(1, Math.min(10, pulse.getSeconds()));
+        long now = System.currentTimeMillis();
+
+        ActiveControlState current = activeControls.get(normalizedChannel);
+        if (current != null && current.endAtMs() > now && safeStrength < current.strength()) {
+            LOGGER.info("DG-LAB control rejected: lower strength cannot override active control. channel={}, current={}, requested={}, remainingMs={}",
+                    normalizedChannel, current.strength(), safeStrength, current.endAtMs() - now);
+            return false;
+        }
+
+        if (!setStrength(normalizedChannel, safeStrength)) {
+            return false;
+        }
+        if (!playPulse(pulse)) {
+            // Roll back immediately when pulse queueing fails, avoiding stuck non-zero strength.
+            setStrength(normalizedChannel, 0);
+            return false;
+        }
+
+        long token = controlToken.getAndIncrement();
+        long endAtMs = now + seconds * 1000L;
+        activeControls.put(normalizedChannel, new ActiveControlState(safeStrength, endAtMs, token));
+        controlScheduler.schedule(() -> resetControlIfCurrent(normalizedChannel, token, 0), seconds, TimeUnit.SECONDS);
+        return true;
+    }
+
+    @Override
     public boolean playBasicWave(int channel, int seconds) {
         if (!isPaired()) {
             return false;
@@ -285,6 +334,22 @@ public class DgLabServiceImpl implements DgLabService {
 
     private int normalizeChannel(int channel) {
         return channel == 2 ? 2 : 1;
+    }
+
+    private void resetControlIfCurrent(int channel, long token, int retryCount) {
+        ActiveControlState current = activeControls.get(channel);
+        if (current == null || current.token() != token) {
+            return;
+        }
+        boolean ok = setStrength(channel, 0);
+        if (!ok) {
+            if (retryCount < CONTROL_RESET_RETRY_MAX) {
+                controlScheduler.schedule(() -> resetControlIfCurrent(channel, token, retryCount + 1), CONTROL_RESET_RETRY_DELAY_MS, TimeUnit.MILLISECONDS);
+                return;
+            }
+            LOGGER.warn("DG-LAB failed to reset control strength to 0 on channel {} after {} retries", channel, retryCount);
+        }
+        activeControls.remove(channel, current);
     }
 
     private int clampToSafetyLimit(int channel, int requested) {
@@ -419,6 +484,9 @@ public class DgLabServiceImpl implements DgLabService {
             return base;
         }
         return base + "/";
+    }
+
+    private record ActiveControlState(int strength, long endAtMs, long token) {
     }
 
     private class TransportListener implements WsTransportClient.Listener {

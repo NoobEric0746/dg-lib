@@ -75,6 +75,6 @@ public final class PulseRegistry {
         if (name.isEmpty()) {
             throw new IllegalArgumentException("Pulse file name cannot be empty");
         }
-        return name.endsWith(".pulse") ? name : name + ".pulse";
+        return name.endsWith(".frame") ? name : name + ".frame";
     }
 }

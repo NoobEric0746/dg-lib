@@ -3,7 +3,6 @@ package org.nooberic.dg_lib.network;
 import com.mojang.logging.LogUtils;
 import org.nooberic.dg_lib.api.DgLibApi;
 import org.nooberic.dg_lib.pulse.Pulse;
-import org.nooberic.dg_lib.pulse.PulseFrameResampler;
 import org.nooberic.dg_lib.service.DeviceStatus;
 import org.slf4j.Logger;
 
@@ -50,10 +49,31 @@ public final class DgClientPacketExecutor {
                                 pulse.getName(),
                                 pulse.getChannel(),
                                 value,
-                                PulseFrameResampler.resize(pulse.getFrames(), value * 10)
+                            pulse.getFrames()
                         )
                                 : pulse;
                         success = DgLibApi.get().playPulse(runtimePulse);
+                    }
+                    break;
+                case CONTROL:
+                    int sep = payload == null ? -1 : payload.indexOf('|');
+                    if (sep <= 0 || sep >= payload.length() - 1) {
+                        error = "invalid-control-payload";
+                        success = false;
+                        break;
+                    }
+                    int strength;
+                    try {
+                        strength = Integer.parseInt(payload.substring(0, sep));
+                    } catch (NumberFormatException ex) {
+                        error = "invalid-control-strength";
+                        success = false;
+                        break;
+                    }
+                    String pulseId = payload.substring(sep + 1);
+                    success = DgLibApi.get().control(channel, strength, pulseId, Math.max(1, value));
+                    if (!success) {
+                        error = "control-rejected-or-failed";
                     }
                     break;
                 default:
