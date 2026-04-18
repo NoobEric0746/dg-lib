@@ -181,7 +181,7 @@
 ### 获取 API 实例
 
 ```java
-import org.nooberic.dg_lib.api.DgLibApi;
+import org.nooberic.dglib.api.DgLibApi;
 
 DgLibApi api = DgLibApi.get();
 ```
@@ -239,7 +239,7 @@ api.setSensationLowerLimit(1, 20);
 #### 强度回传监听（实时）
 
 ```java
-import org.nooberic.dg_lib.service.StrengthFeedbackListener;
+import org.nooberic.dglib.service.StrengthFeedbackListener;
 
 api.setStrengthFeedbackListener(new StrengthFeedbackListener() {
     @Override
@@ -252,7 +252,7 @@ api.setStrengthFeedbackListener(new StrengthFeedbackListener() {
 说明：
 - 当收到 APP 回传的 `strength-A+B+ALimit+BLimit` 消息时会触发回调。
 - 传入 `null` 可取消监听：`api.setStrengthFeedbackListener(null);`
-- `pain` / `sensation floor` 会持久化到 `config/dg_lib-common.toml`，重启游戏后仍保留。
+- `pain` / `sensation floor` 会持久化到 `config/dglib-common.toml`，重启游戏后仍保留。
 
 ## 快捷键
 
@@ -288,10 +288,10 @@ api.shutdown();
 ### 使用示例
 
 ```java
-import org.nooberic.dg_lib.api.DgLibApi;
-import org.nooberic.dg_lib.service.ConnectionState;
-import org.nooberic.dg_lib.pulse.Pulse;
-import org.nooberic.dg_lib.pulse.PulseFileParser;
+import org.nooberic.dglib.api.DgLibApi;
+import org.nooberic.dglib.service.ConnectionState;
+import org.nooberic.dglib.pulse.Pulse;
+import org.nooberic.dglib.pulse.PulseFileParser;
 
 import java.nio.file.Path;
 
@@ -366,8 +366,8 @@ frames=0A0A0A0A00000000,0A0A0A0A14141414,0A0A0A0A64646464
 ### 波形注册机制（文件名 + 游戏内 id）
 
 ```java
-import org.nooberic.dg_lib.api.DgLibApi;
-import org.nooberic.dg_lib.pulse.Pulse;
+import org.nooberic.dglib.api.DgLibApi;
+import org.nooberic.dglib.pulse.Pulse;
 
 DgLibApi api = DgLibApi.get();
 
@@ -395,8 +395,8 @@ var all = api.getAllPulses(); // Map<String, Pulse>
 
 ```java
 import net.minecraft.server.level.ServerPlayer;
-import org.nooberic.dg_lib.multiplayer.DgServerCoyoteApi;
-import org.nooberic.dg_lib.multiplayer.ServerCoyote;
+import org.nooberic.dglib.multiplayer.DgServerCoyoteApi;
+import org.nooberic.dglib.multiplayer.ServerCoyote;
 
 ServerPlayer targetPlayer = ...;
 ServerCoyote coyote = DgServerCoyoteApi.get().getCoyote(targetPlayer);
@@ -452,12 +452,12 @@ coyote.refreshStatus().thenAccept(snapshot -> {
 
 默认连接地址配置在游戏配置目录中，路径为：
 ```
-config/dg_lib-common.toml
+config/dglib-common.toml
 ```
 
 ### 修改连接地址
 
-编辑 `dg_lib-common.toml` 文件，修改以下配置：
+编辑 `dglib-common.toml` 文件，修改以下配置：
 ```toml
 wsUrl = "wss://ws.dungeon-lab.cn/"
 ```
