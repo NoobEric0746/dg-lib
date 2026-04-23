@@ -135,6 +135,9 @@ public final class DgServerCoyoteApi {
     }
 
     private int normalizeChannel(int channel) {
+        if (channel == 3) {
+            return 3;
+        }
         return channel == 2 ? 2 : 1;
     }
 

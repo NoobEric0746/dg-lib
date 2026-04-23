@@ -29,6 +29,9 @@ public final class DgClientPacketExecutor {
                 case SET_STRENGTH:
                     success = DgLibApi.get().setStrength(channel, value);
                     break;
+                case CLEAR:
+                    success = DgLibApi.get().clear(channel);
+                    break;
                 case INCREASE_STRENGTH:
                     success = DgLibApi.get().increaseStrength(channel, Math.max(1, value));
                     break;

@@ -1,6 +1,7 @@
 package org.nooberic.dglib.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
@@ -164,50 +165,91 @@ public final class DgLibCommands {
                             return 1;
                         }))
                 .then(Commands.literal("set")
-                        .then(Commands.argument("channel", IntegerArgumentType.integer(1, 2))
+                        .then(Commands.argument("channel", IntegerArgumentType.integer(1, 3))
                                 .then(Commands.argument("value", IntegerArgumentType.integer(0, 200))
                                         .executes(ctx -> {
                                             int channel = IntegerArgumentType.getInteger(ctx, "channel");
                                             int value = IntegerArgumentType.getInteger(ctx, "value");
                                             boolean ok = DgLibApi.get().setStrength(channel, value);
                                             String msg = ok
-                                                    ? String.format("§2[DG Lib]§r Set Ch%d to %d sent.", channel, value)
+                                        ? String.format("§2[DG Lib]§r Set Ch%s to %d sent.", channel == 3 ? "1+2" : String.valueOf(channel), value)
                                                     : "§c[DG Lib] Not paired or unavailable.";
                                             ctx.getSource().sendSuccess(() -> Component.literal(msg), false);
                                             return ok ? 1 : 0;
                                         }))))
-                                .then(Commands.literal("control")
-                                    .then(Commands.argument("channel", IntegerArgumentType.integer(1, 2))
-                                        .then(Commands.argument("strength", IntegerArgumentType.integer(0, 200))
-                                            .then(Commands.argument("pulse_id", StringArgumentType.word())
+                                    .then(Commands.literal("increase")
+                                        .then(Commands.argument("channel", IntegerArgumentType.integer(1, 3))
+                                            .then(Commands.argument("delta", IntegerArgumentType.integer(1, 200))
+                                                .executes(ctx -> {
+                                                    int channel = IntegerArgumentType.getInteger(ctx, "channel");
+                                                    int delta = IntegerArgumentType.getInteger(ctx, "delta");
+                                                    boolean ok = DgLibApi.get().increaseStrength(channel, delta);
+                                                    String msg = ok
+                                                        ? String.format("§2[DG Lib]§r Increased Ch%s by %d.", channel == 3 ? "1+2" : String.valueOf(channel), delta)
+                                                        : "§c[DG Lib] Not paired or unavailable.";
+                                                    ctx.getSource().sendSuccess(() -> Component.literal(msg), false);
+                                                    return ok ? 1 : 0;
+                                                }))))
+                                    .then(Commands.literal("decrease")
+                                        .then(Commands.argument("channel", IntegerArgumentType.integer(1, 3))
+                                            .then(Commands.argument("delta", IntegerArgumentType.integer(1, 200))
+                                                .executes(ctx -> {
+                                                    int channel = IntegerArgumentType.getInteger(ctx, "channel");
+                                                    int delta = IntegerArgumentType.getInteger(ctx, "delta");
+                                                    boolean ok = DgLibApi.get().decreaseStrength(channel, delta);
+                                                    String msg = ok
+                                                        ? String.format("§2[DG Lib]§r Decreased Ch%s by %d.", channel == 3 ? "1+2" : String.valueOf(channel), delta)
+                                                        : "§c[DG Lib] Not paired or unavailable.";
+                                                    ctx.getSource().sendSuccess(() -> Component.literal(msg), false);
+                                                    return ok ? 1 : 0;
+                                                }))))
+                                    .then(Commands.literal("clear")
+                                        .then(Commands.argument("channel", IntegerArgumentType.integer(1, 3))
+                                            .executes(ctx -> {
+                                                int channel = IntegerArgumentType.getInteger(ctx, "channel");
+                                                boolean ok = DgLibApi.get().clear(channel);
+                                                String msg = ok
+                                                    ? String.format("§2[DG Lib]§r Cleared Ch%s wave and reset strength.", channel == 3 ? "1+2" : String.valueOf(channel))
+                                                    : "§c[DG Lib] Not paired or unavailable.";
+                                                ctx.getSource().sendSuccess(() -> Component.literal(msg), false);
+                                                return ok ? 1 : 0;
+                                        })))
+                .then(Commands.literal("control")
+                        .then(Commands.argument("channel", IntegerArgumentType.integer(1, 3))
+                                .then(Commands.argument("strength", IntegerArgumentType.integer(0, 200))
+                                        .then(Commands.argument("pulse_id", StringArgumentType.word())
                                                 .suggests(PULSE_ID_SUGGESTIONS)
-                                                .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 10))
-                                                    .executes(ctx -> {
-                                                        int channel = IntegerArgumentType.getInteger(ctx, "channel");
-                                                        int strength = IntegerArgumentType.getInteger(ctx, "strength");
-                                                        String pulseId = StringArgumentType.getString(ctx, "pulse_id");
-                                                        int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
+                                                .then(Commands.argument("seconds", DoubleArgumentType.doubleArg(0.1D, 60D))
+                                                        .executes(ctx -> {
+                                                            int channel = IntegerArgumentType.getInteger(ctx, "channel");
+                                                            int strength = IntegerArgumentType.getInteger(ctx, "strength");
+                                                            String pulseId = StringArgumentType.getString(ctx, "pulse_id");
+                                                            double seconds = DoubleArgumentType.getDouble(ctx, "seconds");
+                                                            try {
+                                                                boolean ok = DgLibApi.get().control(channel, strength, pulseId, seconds);
+                                                                if (!ok && DgLibApi.get().getPulse(pulseId) == null) {
+                                                                    ctx.getSource().sendFailure(Component.literal("§c[DG Lib] Unknown pulse id: " + pulseId));
+                                                                    ctx.getSource().sendSuccess(
+                                                                            () -> Component.literal("§7Registered: " + String.join(", ", DgLibApi.get().getAllPulses().keySet())),
+                                                                            false
+                                                                    );
+                                                                    return 0;
+                                                                }
 
-                                                        boolean ok = DgLibApi.get().control(channel, strength, pulseId, seconds);
-                                                        if (!ok && DgLibApi.get().getPulse(pulseId) == null) {
-                                                        ctx.getSource().sendFailure(Component.literal("§c[DG Lib] Unknown pulse id: " + pulseId));
-                                                        ctx.getSource().sendSuccess(
-                                                            () -> Component.literal("§7Registered: " + String.join(", ", DgLibApi.get().getAllPulses().keySet())),
-                                                            false
-                                                        );
-                                                        return 0;
-                                                        }
-
-                                                        String msg = ok
-                                                            ? String.format("§2[DG Lib]§r Control sent. Ch%d strength=%d, pulse='%s', %ds.", channel, strength, pulseId, seconds)
-                                                            : "§c[DG Lib] Not paired or unavailable.";
-                                                        ctx.getSource().sendSuccess(() -> Component.literal(msg), false);
-                                                        return ok ? 1 : 0;
-                                                    }))))))
+                                                                String msg = ok
+                    ? String.format("§2[DG Lib]§r Control sent. Ch%s strength=%d, pulse='%s', %.1fs.", channel == 3 ? "1+2" : String.valueOf(channel), strength, pulseId, seconds)
+                                                                        : "§c[DG Lib] Not paired or unavailable.";
+                                                                ctx.getSource().sendSuccess(() -> Component.literal(msg), false);
+                                                                return ok ? 1 : 0;
+                                                            } catch (Throwable ex) {
+                                                                ctx.getSource().sendFailure(Component.literal("§c[DG Lib] Control failed: " + ex.getClass().getSimpleName() + " - " + String.valueOf(ex.getMessage())));
+                                                                return 0;
+                                                            }
+                                                        }))))))
                 .then(Commands.literal("wave")
                         .then(Commands.argument("pulse_id", StringArgumentType.word())
                                 .suggests(PULSE_ID_SUGGESTIONS)
-                                .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 10))
+                                .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 60))
                                 .executes(ctx -> {
                                     String pulseId = StringArgumentType.getString(ctx, "pulse_id");
                                     int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
@@ -263,7 +305,7 @@ public final class DgLibCommands {
                     })))
                 .then(Commands.literal("set")
                         .then(Commands.argument("player", EntityArgument.player())
-                                .then(Commands.argument("channel", IntegerArgumentType.integer(1, 2))
+                        .then(Commands.argument("channel", IntegerArgumentType.integer(1, 3))
                                         .then(Commands.argument("value", IntegerArgumentType.integer(0, 200))
                                                 .executes(ctx -> {
                                                     ServerPlayer target = EntityArgument.getPlayer(ctx, "player");
@@ -275,18 +317,73 @@ public final class DgLibCommands {
                                                             ctx.getSource(),
                                                             coyote.setStrength(channel, value),
                                                             ok -> ok
-                                                                    ? String.format("§2[DG Server]§r Set %s Ch%d to %d sent.", target.getGameProfile().getName(), channel, value)
+                                                                    ? String.format("§2[DG Server]§r Set %s Ch%s to %d sent.", target.getGameProfile().getName(), channel == 3 ? "1+2" : String.valueOf(channel), value)
                                                                     : String.format("§c[DG Server] %s operation rejected (not paired or unavailable).", target.getGameProfile().getName())
                                                     );
                                                     return 1;
                                                 })))))
+                                    .then(Commands.literal("increase")
+                                        .then(Commands.argument("player", EntityArgument.player())
+                                            .then(Commands.argument("channel", IntegerArgumentType.integer(1, 3))
+                                                .then(Commands.argument("delta", IntegerArgumentType.integer(1, 200))
+                                                    .executes(ctx -> {
+                                                        ServerPlayer target = EntityArgument.getPlayer(ctx, "player");
+                                                        int channel = IntegerArgumentType.getInteger(ctx, "channel");
+                                                        int delta = IntegerArgumentType.getInteger(ctx, "delta");
+
+                                                        ServerCoyote coyote = DgServerCoyoteApi.get().getCoyote(target);
+                                                        handleServerFuture(
+                                                            ctx.getSource(),
+                                                            coyote.increaseStrength(channel, delta),
+                                                            ok -> ok
+                                                                ? String.format("§2[DG Server]§r Increased %s Ch%s by %d.", target.getGameProfile().getName(), channel == 3 ? "1+2" : String.valueOf(channel), delta)
+                                                                : String.format("§c[DG Server] %s increase rejected (not paired or unavailable).", target.getGameProfile().getName())
+                                                        );
+                                                        return 1;
+                                                    })))))
+                                    .then(Commands.literal("decrease")
+                                        .then(Commands.argument("player", EntityArgument.player())
+                                            .then(Commands.argument("channel", IntegerArgumentType.integer(1, 3))
+                                                .then(Commands.argument("delta", IntegerArgumentType.integer(1, 200))
+                                                    .executes(ctx -> {
+                                                        ServerPlayer target = EntityArgument.getPlayer(ctx, "player");
+                                                        int channel = IntegerArgumentType.getInteger(ctx, "channel");
+                                                        int delta = IntegerArgumentType.getInteger(ctx, "delta");
+
+                                                        ServerCoyote coyote = DgServerCoyoteApi.get().getCoyote(target);
+                                                        handleServerFuture(
+                                                            ctx.getSource(),
+                                                            coyote.decreaseStrength(channel, delta),
+                                                            ok -> ok
+                                                                ? String.format("§2[DG Server]§r Decreased %s Ch%s by %d.", target.getGameProfile().getName(), channel == 3 ? "1+2" : String.valueOf(channel), delta)
+                                                                : String.format("§c[DG Server] %s decrease rejected (not paired or unavailable).", target.getGameProfile().getName())
+                                                        );
+                                                        return 1;
+                                                    })))))
+                                    .then(Commands.literal("clear")
+                                        .then(Commands.argument("player", EntityArgument.player())
+                                            .then(Commands.argument("channel", IntegerArgumentType.integer(1, 3))
+                                                .executes(ctx -> {
+                                                    ServerPlayer target = EntityArgument.getPlayer(ctx, "player");
+                                                    int channel = IntegerArgumentType.getInteger(ctx, "channel");
+
+                                                    ServerCoyote coyote = DgServerCoyoteApi.get().getCoyote(target);
+                                                    handleServerFuture(
+                                                        ctx.getSource(),
+                                                        coyote.clear(channel),
+                                                        ok -> ok
+                                                            ? String.format("§2[DG Server]§r Cleared %s Ch%s wave and strength.", target.getGameProfile().getName(), channel == 3 ? "1+2" : String.valueOf(channel))
+                                                            : String.format("§c[DG Server] %s clear rejected (not paired or unavailable).", target.getGameProfile().getName())
+                                                    );
+                                                    return 1;
+                                        }))))
                                     .then(Commands.literal("control")
                                         .then(Commands.argument("player", EntityArgument.player())
-                                            .then(Commands.argument("channel", IntegerArgumentType.integer(1, 2))
+                                            .then(Commands.argument("channel", IntegerArgumentType.integer(1, 3))
                                                 .then(Commands.argument("strength", IntegerArgumentType.integer(0, 200))
                                                     .then(Commands.argument("pulse_id", StringArgumentType.word())
                                                         .suggests(PULSE_ID_SUGGESTIONS)
-                                                        .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 10))
+                                                        .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 60))
                                                             .executes(ctx -> {
                                                                 ServerPlayer target = EntityArgument.getPlayer(ctx, "player");
                                                                 int channel = IntegerArgumentType.getInteger(ctx, "channel");
@@ -299,7 +396,7 @@ public final class DgLibCommands {
                                                                     ctx.getSource(),
                                                                     coyote.control(channel, strength, pulseId, seconds),
                                                                     ok -> ok
-                                                                        ? String.format("§2[DG Server]§r Control sent to %s: Ch%d=%d, pulse='%s', %ds.", target.getGameProfile().getName(), channel, strength, pulseId, seconds)
+                                                                        ? String.format("§2[DG Server]§r Control sent to %s: Ch%s=%d, pulse='%s', %ds.", target.getGameProfile().getName(), channel == 3 ? "1+2" : String.valueOf(channel), strength, pulseId, seconds)
                                                                         : String.format("§c[DG Server] %s control rejected (not paired / id not found / unavailable).", target.getGameProfile().getName())
                                                                 );
                                                                 return 1;
@@ -308,7 +405,7 @@ public final class DgLibCommands {
                         .then(Commands.argument("player", EntityArgument.player())
                                 .then(Commands.argument("pulse_id", StringArgumentType.word())
                             .suggests(PULSE_ID_SUGGESTIONS)
-                            .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 10))
+                            .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 60))
                                         .executes(ctx -> {
                                             ServerPlayer target = EntityArgument.getPlayer(ctx, "player");
                                             String pulseId = StringArgumentType.getString(ctx, "pulse_id");

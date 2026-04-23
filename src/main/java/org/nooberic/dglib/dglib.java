@@ -75,6 +75,7 @@ public class dglib {
         private static void registerBuiltInPulses() {
             registerPulse("basic_breath", "basic_breath.frame");
             registerPulse("chaos", "chaos.frame");
+            registerPulse("const", "const.frame");
         }
 
         private static void registerPulse(String id, String fileName) {

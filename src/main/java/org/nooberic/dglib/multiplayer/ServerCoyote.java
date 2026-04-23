@@ -28,6 +28,10 @@ public class ServerCoyote {
         return api.sendAndMapSuccess(playerId, org.nooberic.dglib.network.DgClientOperation.SET_STRENGTH, channel, value);
     }
 
+    public CompletableFuture<Boolean> clear(int channel) {
+        return api.sendAndMapSuccess(playerId, org.nooberic.dglib.network.DgClientOperation.CLEAR, channel, 0);
+    }
+
     public CompletableFuture<Boolean> increaseStrength(int channel, int delta) {
         return api.sendAndMapSuccess(playerId, org.nooberic.dglib.network.DgClientOperation.INCREASE_STRENGTH, channel, delta);
     }

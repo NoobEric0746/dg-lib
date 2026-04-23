@@ -1,7 +1,4 @@
 {
-  "name": "basic_breath",
-  "channel": "A",
-  "seconds": 5,
   "frames": [
     "0A0A0A0A00000000",
     "0A0A0A0A14141414",

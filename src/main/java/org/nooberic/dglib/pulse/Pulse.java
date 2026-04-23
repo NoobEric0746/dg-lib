@@ -25,7 +25,7 @@ public final class Pulse {
     public Pulse(String name, Channel channel, int seconds, List<String> frames) {
         this.name = name == null ? "" : name;
         this.channel = channel == null ? Channel.A : channel;
-        this.seconds = Math.max(1, Math.min(10, seconds));
+        this.seconds = Math.max(1, Math.min(60, seconds));
         this.frames = Collections.unmodifiableList(new ArrayList<>(frames == null ? List.of() : frames));
     }
 

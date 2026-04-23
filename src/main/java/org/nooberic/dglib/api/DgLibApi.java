@@ -14,9 +14,11 @@ public final class DgLibApi implements IDgLibApi {
     private static final DgLibApi INSTANCE = new DgLibApi();
 
     private final DgLabService service;
+    private final WaveControlScheduler scheduler;
 
     private DgLibApi() {
         this.service = new DgLabServiceImpl();
+        this.scheduler = new WaveControlScheduler(this.service);
     }
 
     public static DgLibApi get() {
@@ -25,11 +27,13 @@ public final class DgLibApi implements IDgLibApi {
 
     @Override
     public void initialize() {
+        scheduler.initialize();
         service.initialize();
     }
 
     @Override
     public void shutdown() {
+        scheduler.shutdown();
         service.shutdown();
     }
 
@@ -105,29 +109,42 @@ public final class DgLibApi implements IDgLibApi {
 
     @Override
     public boolean setStrength(int channel, int value) {
+        if (channel == 3) {
+            boolean channelAOk = service.setStrength(1, value);
+            boolean channelBOk = service.setStrength(2, value);
+            return channelAOk && channelBOk;
+        }
         return service.setStrength(channel, value);
     }
 
     @Override
-    public boolean control(int channel, int strength, String pulseId, int seconds) {
+    public boolean clear(int channel) {
+        boolean clearWaveOk = service.clearWave(channel);
+        boolean setStrengthOk = service.setStrength(channel, 0);
+        return clearWaveOk && setStrengthOk;
+    }
+
+    @Override
+    public boolean control(int channel, int strength, String pulseId, double seconds) {
         Pulse pulse = PulseRegistry.get(pulseId);
         if (pulse == null) {
             return false;
         }
-        int safeSeconds = Math.max(1, Math.min(10, seconds));
-        Pulse.Channel targetChannel = channel == 2 ? Pulse.Channel.B : Pulse.Channel.A;
-        Pulse runtimePulse = new Pulse(
-                pulse.getName(),
-                targetChannel,
-                safeSeconds,
-                pulse.getFrames()
-        );
-
-        return service.control(channel, strength, runtimePulse);
+        if (channel == 3) {
+            boolean channelAOk = scheduler.schedule(1, strength, pulse, seconds);
+            boolean channelBOk = scheduler.schedule(2, strength, pulse, seconds);
+            return channelAOk && channelBOk;
+        }
+        return scheduler.schedule(channel, strength, pulse, seconds);
     }
 
     @Override
     public boolean playBasicWave(int channel, int seconds) {
+        if (channel == 3) {
+            boolean channelAOk = service.playBasicWave(1, seconds);
+            boolean channelBOk = service.playBasicWave(2, seconds);
+            return channelAOk && channelBOk;
+        }
         return service.playBasicWave(channel, seconds);
     }
 

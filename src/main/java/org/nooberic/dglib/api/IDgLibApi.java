@@ -42,7 +42,9 @@ public interface IDgLibApi {
 
     boolean setStrength(int channel, int value);
 
-    boolean control(int channel, int strength, String pulseId, int seconds);
+    boolean clear(int channel);
+
+    boolean control(int channel, int strength, String pulseId, double seconds);
 
     boolean playBasicWave(int channel, int seconds);
 

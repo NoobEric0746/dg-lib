@@ -14,9 +14,6 @@ SOCKET_MAX_FRAMES = 100
 
 @dataclass(frozen=True)
 class Pulse:
-    name: str
-    channel: str
-    seconds: int
     frames: List[str]
 
 
@@ -97,8 +94,7 @@ def parse_dungeonlab_pulse(text: str) -> Pulse:
     if not frames:
         raise ValueError("No frames could be generated from the pulse content")
 
-    seconds = max(1, min(10, math.ceil(len(frames) / 10.0)))
-    pulse = Pulse(name="dungeonlab", channel="A", seconds=seconds, frames=frames)
+    pulse = Pulse(frames=frames)
     validate_pulse(pulse)
     return pulse
 
@@ -176,17 +172,17 @@ def clamp_int(value: int, low: int, high: int) -> int:
 
 def parse_json_pulse(text: str) -> Pulse:
     obj = json.loads(text)
-    name = str(obj.get("name", ""))
-    channel = str(obj.get("channel", "A")).strip().upper() or "A"
-    seconds = clamp_int(int(obj.get("seconds", 5)), 1, 10)
-    frames = [str(frame).strip().upper() for frame in obj.get("frames", [])]
-    pulse = Pulse(name=name, channel=channel, seconds=seconds, frames=frames)
+    if isinstance(obj, list):
+        frames = [str(frame).strip().upper() for frame in obj]
+    else:
+        frames = [str(frame).strip().upper() for frame in obj.get("frames", [])]
+    pulse = Pulse(frames=frames)
     validate_pulse(pulse)
     return pulse
 
 
 def parse_key_value_pulse(text: str) -> Pulse:
-    values = {"name": "", "channel": "A", "seconds": 5, "frames": []}
+    values = {"frames": []}
     for raw_line in text.splitlines():
         line = raw_line.strip()
         if not line or line.startswith("#"):
@@ -196,21 +192,10 @@ def parse_key_value_pulse(text: str) -> Pulse:
         key, value = line.split("=", 1)
         key = key.strip().lower()
         value = value.strip()
-        if key == "name":
-            values["name"] = value
-        elif key == "channel":
-            values["channel"] = value.strip().upper() or "A"
-        elif key == "seconds":
-            values["seconds"] = clamp_int(parse_int(value, 5), 1, 10)
-        elif key == "frames":
+        if key == "frames":
             values["frames"] = [item.strip().upper() for item in value.split(",") if item.strip()]
 
-    pulse = Pulse(
-        name=str(values["name"]),
-        channel=str(values["channel"]),
-        seconds=int(values["seconds"]),
-        frames=list(values["frames"]),
-    )
+    pulse = Pulse(frames=list(values["frames"]))
     validate_pulse(pulse)
     return pulse
 
@@ -232,21 +217,12 @@ def truncate_frames_if_needed(pulse: Pulse, source: Path) -> Pulse:
         file=sys.stderr,
     )
     truncated_frames = pulse.frames[:SOCKET_MAX_FRAMES]
-    seconds = max(1, min(10, math.ceil(len(truncated_frames) / 10.0)))
-    return Pulse(
-        name=pulse.name,
-        channel=pulse.channel,
-        seconds=seconds,
-        frames=truncated_frames,
-    )
+    return Pulse(frames=truncated_frames)
 
 
 def write_frame_file(path: Path, pulse: Pulse) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     data = {
-        "name": pulse.name,
-        "channel": pulse.channel,
-        "seconds": pulse.seconds,
         "frames": pulse.frames,
     }
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

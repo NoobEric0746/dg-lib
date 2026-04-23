@@ -7,7 +7,8 @@ public enum DgClientOperation {
     DECREASE_STRENGTH(3),
     PLAY_BASIC_WAVE(4),
     PLAY_PULSE_BY_ID(5),
-    CONTROL(6);
+    CONTROL(6),
+    CLEAR(7);
 
     private final int id;
 

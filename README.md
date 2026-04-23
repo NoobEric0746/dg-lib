@@ -6,11 +6,13 @@
 
 - ✅ WebSocket 连接管理
 - ✅ 设备自动配对（扫描二维码）
-- ✅ 两通道强度控制（0-200 范围）
-- ✅ 基础波形发送（官方 clientMsg 格式）
+- ✅ 两通道强度控制（0-200 范围，支持 `channel=3` 同时操作 A/B）
+- ✅ 内置与自定义波形发送（`.frame` / `Pulse`）
 - ✅ 实时状态查询
 - ✅ 自动重连机制
 - ✅ 游戏内 GUI 界面
+- ✅ 本地调度式 `control`（支持优先级抢占与恢复）
+- ✅ 直接执行的 `set` / `wave` / `increase` / `decrease` / `clear`
 
 ## 游戏内命令
 
@@ -116,40 +118,124 @@
 ```
 /dg set 1 150     # 设置通道 A（通道 1）强度为 150
 /dg set 2 100     # 设置通道 B（通道 2）强度为 100
+/dg set 3 80      # 同时设置通道 A 和 B 为 80
 ```
 
 **参数说明**：
-- `<channel>`：通道号（1 = 通道 A，2 = 通道 B）
+- `<channel>`：通道号（`1` = 通道 A，`2` = 通道 B，`3` = 同时对 A/B 两个通道执行）
 - `<value>`：强度值（0-200）
 
 **返回**：
 - 成功：`[DG Lib] Set Ch1 to 150 sent.`
+- 双通道成功：`[DG Lib] Set Ch1+2 to 80 sent.`
 - 失败：`[DG Lib] Not paired or unavailable.`
 
 **安全值处理**：
 - 当已收到设备回传的通道安全上限后，若设置值超过该上限，会自动下调到安全上限再发送。
 - 不会因为超限而直接丢弃操作。
+- `set` 为直接执行，不进入本地调度器。
 
 ---
 
-### `/dg wave <channel> <seconds>`
-**功能**：发送最基础的官方格式波形（type = clientMsg）
+### `/dg increase <channel> <delta>`
+**功能**：直接增加指定通道的强度值
 
 **使用**：
 ```
-/dg wave 1 3
-/dg wave 2 5
+/dg increase 1 10
+/dg increase 3 5
 ```
 
 **参数说明**：
-- `<channel>`：通道号（1 = 通道 A，2 = 通道 B）
-- `<seconds>`：持续时长（1-10 秒）
+- `<channel>`：通道号（`1` = 通道 A，`2` = 通道 B，`3` = 同时对 A/B 两个通道执行）
+- `<delta>`：增加值（1-200）
 
-**协议说明**：
-- 按官方 v2 文档格式发送：`type: "clientMsg"`
-- `channel` 使用 `A` / `B`
-- `message` 使用 `A:["HEX", ...]` 或 `B:["HEX", ...]`
-- 服务端会转发为 `pulse-...` 给 APP
+**说明**：
+- `increase` 为直接执行，不进入本地调度器。
+
+---
+
+### `/dg decrease <channel> <delta>`
+**功能**：直接减少指定通道的强度值
+
+**使用**：
+```
+/dg decrease 2 10
+/dg decrease 3 5
+```
+
+**参数说明**：
+- `<channel>`：通道号（`1` = 通道 A，`2` = 通道 B，`3` = 同时对 A/B 两个通道执行）
+- `<delta>`：减少值（1-200）
+
+**说明**：
+- `decrease` 为直接执行，不进入本地调度器。
+
+---
+
+### `/dg clear <channel>`
+**功能**：清空指定通道的调度内容，并立即清空当前波形与强度
+
+**使用**：
+```
+/dg clear 1
+/dg clear 3
+```
+
+**说明**：
+- `clear` 会调用清波并把强度重置为 `0`。
+- `channel=3` 时会同时作用于 A/B 两个通道。
+- 该命令用于结束当前输出并清空调度状态。
+
+---
+
+### `/dg control <channel> <strength> <pulse_id> <seconds>`
+**功能**：把一个已注册波形加入本地调度器并按指定强度播放
+
+**使用**：
+```
+/dg control 1 80 basic_breath 3
+/dg control 2 60 chaos 1.5
+/dg control 3 40 const 5
+```
+
+**参数说明**：
+- `<channel>`：通道号（`1` = 通道 A，`2` = 通道 B，`3` = 同时对 A/B 两个通道分别调度）
+- `<strength>`：目标强度（0-200）
+- `<pulse_id>`：已注册波形 ID，例如 `basic_breath`、`chaos`、`const`
+- `<seconds>`：持续时长（`0.1-60` 秒，支持 `0.1` 秒精度）
+
+**调度说明**：
+- `control` 使用本地调度器管理波形播放，而不是简单的一次性直发。
+- 高优先级（更高强度）的任务会抢占低优先级任务。
+- 抢占结束后，低优先级任务会按剩余时长恢复。
+- `channel=3` 会拆成通道 A / B 两条独立调度任务，各自独立抢占和恢复。
+
+**返回**：
+- 成功：`[DG Lib] Control sent. Ch1 strength=80, pulse='basic_breath', 3.0s.`
+- 双通道成功：`[DG Lib] Control sent. Ch1+2 strength=40, pulse='const', 5.0s.`
+- 波形不存在：`[DG Lib] Unknown pulse id: ...`
+
+---
+
+### `/dg wave <pulse_id> <seconds>`
+**功能**：直接播放指定波形，不经过调度器强度优先级管理
+
+**使用**：
+```
+/dg wave basic_breath 3
+/dg wave chaos 5
+```
+
+**参数说明**：
+- `<pulse_id>`：已注册波形 ID
+- `<seconds>`：持续时长（1-60 秒，整数）
+
+**说明**：
+- 该命令会把波形内容按给定秒数直接发送到设备。
+- `wave` 命令当前不单独传 `channel` 参数，而是使用波形对象自身的通道信息。
+- 运行时会按 `Pulse` 对象中的通道信息发送；若需要显式指定通道或双通道同时播放，优先使用 `/dg control`。
+- `wave` 为直接执行，不进入本地调度器。
 
 ---
 
@@ -158,11 +244,33 @@
 
 #### `/dg_server set <player> <channel> <value>`
 - 示例：`/dg_server set Steve 1 150`
-- 含义：设置 `Steve` 的通道 1 强度为 150。
+- 示例：`/dg_server set Steve 3 80`
+- 含义：设置 `Steve` 的通道 1，或在 `channel=3` 时同时设置 A/B 两个通道。
 
-#### `/dg_server wave <player> <channel> <seconds>`
-- 示例：`/dg_server wave Steve 2 5`
-- 含义：让 `Steve` 的通道 2 播放 5 秒基础波形。
+#### `/dg_server increase <player> <channel> <delta>`
+- 示例：`/dg_server increase Steve 1 10`
+- 示例：`/dg_server increase Steve 3 5`
+- 含义：直接增加目标玩家指定通道强度，不走调度器。
+
+#### `/dg_server decrease <player> <channel> <delta>`
+- 示例：`/dg_server decrease Steve 2 10`
+- 示例：`/dg_server decrease Steve 3 5`
+- 含义：直接减少目标玩家指定通道强度，不走调度器。
+
+#### `/dg_server clear <player> <channel>`
+- 示例：`/dg_server clear Steve 1`
+- 示例：`/dg_server clear Steve 3`
+- 含义：清空目标玩家该通道当前波形并将强度归零，同时清理对应调度状态。
+
+#### `/dg_server control <player> <channel> <strength> <pulse_id> <seconds>`
+- 示例：`/dg_server control Steve 1 60 basic_breath 5`
+- 示例：`/dg_server control Steve 3 40 const 10`
+- 含义：请求 `Steve` 客户端本地 DG Lib 执行调度式波形控制。
+- 当前服务端命令的 `<seconds>` 仍为整数秒（1-60），客户端本地 `/dg control` 才支持 `0.1` 秒精度。
+
+#### `/dg_server wave <player> <pulse_id> <seconds>`
+- 示例：`/dg_server wave Steve chaos 5`
+- 含义：让 `Steve` 客户端直接播放指定波形 `5` 秒。
 
 #### `/dg_server status <player>`
 - 示例：`/dg_server status Steve`
@@ -259,21 +367,34 @@ api.setStrengthFeedbackListener(new StrengthFeedbackListener() {
 - `U`：打开 DG 强度控制界面
 - `I`：急停（将 A/B 强度置 0 并断开配对）
 
-#### 强度控制
+#### 强度控制与调度
 
 ```java
-// 设置通道强度（1 = 通道 A，2 = 通道 B，值范围 0-200）
-boolean success = api.setStrength(1, 150);
+// 设置通道强度（1 = 通道 A，2 = 通道 B，3 = 同时操作 A/B，值范围 0-200）
+boolean setOk = api.setStrength(1, 150);
+
+// 同时设置两个通道
+boolean dualSet = api.setStrength(3, 80);
+
+// 清空当前通道的波形并把强度置 0
+boolean clearOk = api.clear(3);
 
 // 增加强度（返回 true 表示成功）
-boolean success = api.increaseStrength(1, 10);
+boolean increaseOk = api.increaseStrength(1, 10);
 
 // 减少强度（返回 true 表示成功）
-boolean success = api.decreaseStrength(1, 10);
+boolean decreaseOk = api.decreaseStrength(1, 10);
 
-// 发送基础波形（channel: 1=A, 2=B, seconds: 1-10）
-boolean success = api.playBasicWave(1, 5);
+// 调度式波形控制（channel: 1=A, 2=B, 3=A+B；seconds 支持小数秒）
+boolean controlOk = api.control(3, 50, "const", 1.5);
+
+// 发送基础波形（channel: 1=A, 2=B, 3=A+B；seconds: 1-60）
+boolean waveOk = api.playBasicWave(1, 5);
 ```
+
+说明：
+- `setStrength()`、`clear()`、`increaseStrength()`、`decreaseStrength()`、`playBasicWave()` / `playPulse()` 都是直接执行。
+- 只有 `control()` 会进入本地调度器。
 
 #### 初始化和清理
 
@@ -290,10 +411,6 @@ api.shutdown();
 ```java
 import org.nooberic.dglib.api.DgLibApi;
 import org.nooberic.dglib.service.ConnectionState;
-import org.nooberic.dglib.pulse.Pulse;
-import org.nooberic.dglib.pulse.PulseFileParser;
-
-import java.nio.file.Path;
 
 public class MyModIntegration {
     public void connectAndControl() {
@@ -309,9 +426,8 @@ public class MyModIntegration {
             api.setStrength(1, 100);  // 通道 A 设置为 100
             api.setStrength(2, 80);   // 通道 B 设置为 80
 
-            // 从 .pulse 文件解析并发送自定义波形
-            Pulse pulse = PulseFileParser.parse(Path.of("config/my-wave.pulse"));
-            api.playPulse(pulse);
+            // 按已注册波形 ID 调度播放（支持抢占/恢复）
+            api.control(3, 60, "basic_breath", 2.5);
             
             // 查询状态
             var status = api.getStatus();
@@ -321,26 +437,24 @@ public class MyModIntegration {
 }
 ```
 
-### Pulse 波形文件与转换
+### `.frame` 波形文件与转换
 
-新增了一组类用于 `.pulse` -> `Pulse` -> Socket 数据转换：
+当前运行时使用的是 `.frame` 文件，内容只保留 `frames` 数组；加载后会转换为内存中的 `Pulse` 对象。
+
+相关类：
 
 - `Pulse`：波形类型变量（name/channel/seconds/frames）
-- `PulseFileParser`：解析 `.pulse` 文件为 `Pulse`
-- `PulseSocketCodec`：将 `Pulse` 拆成 Socket 可发送数据
+- `PulseFileParser`：解析 `.frame` 文件为 `Pulse`
 - `PulseRegistry`：全局波形注册表（id -> Pulse）
 
-`src/main/resources/pulse/` 目录用于存放 `.pulse` 文件。
+`src/main/resources/pulse/` 目录用于存放 `.frame` 文件。
 
-支持两种 `.pulse` 格式：
+支持的 `.frame` 内容格式：
 
-1. JSON
+1. 对象格式（推荐）
 
 ```json
 {
-    "name": "my-wave",
-    "channel": "A",
-    "seconds": 5,
     "frames": [
         "0A0A0A0A00000000",
         "0A0A0A0A14141414",
@@ -349,19 +463,30 @@ public class MyModIntegration {
 }
 ```
 
-2. Key-Value
+2. 纯数组格式
 
-```txt
-name=my-wave
-channel=A
-seconds=5
-frames=0A0A0A0A00000000,0A0A0A0A14141414,0A0A0A0A64646464
+```json
+[
+    "0A0A0A0A00000000",
+    "0A0A0A0A14141414",
+    "0A0A0A0A64646464"
+]
 ```
 
 约束：
-- `channel`: `A` 或 `B`
-- `seconds`: 1-10（自动钳制）
 - `frames`: 每帧必须为 16 位 HEX 字符串
+
+说明：
+- 当前运行时最终只读取 `frames`。
+- `Pulse` 内存对象仍保留 `name/channel/seconds` 字段，但 `.frame` 文件中不再需要这些字段。
+
+### 内置波形
+
+当前客户端启动时会自动注册以下内置波形：
+
+- `basic_breath`
+- `chaos`
+- `const`
 
 ### 波形注册机制（文件名 + 游戏内 id）
 
@@ -371,8 +496,8 @@ import org.nooberic.dglib.pulse.Pulse;
 
 DgLibApi api = DgLibApi.get();
 
-// 注册：文件在 src/main/resources/pulse/my_wave.pulse
-boolean ok = api.registerPulse("my_wave_id", "my_wave.pulse");
+// 注册：文件在 src/main/resources/pulse/my_wave.frame
+boolean ok = api.registerPulse("my_wave_id", "my_wave.frame");
 
 // 全局获取（主模组和附属模组都可按 id 获取）
 Pulse pulse = api.getPulse("my_wave_id");
@@ -419,6 +544,11 @@ coyote.getCurrentStrength(1).thenAccept(aStrength -> {
 
 coyote.getStrengthLimit(1).thenAccept(aLimit -> {
     // A 通道当前上限
+});
+
+// 调度式波形控制（seconds 当前为整数秒）
+coyote.control(3, 50, "const", 5).thenAccept(success -> {
+    // 让目标客户端同时调度 A/B 两个通道
 });
 
 // 获取完整状态快照
@@ -489,6 +619,7 @@ wsUrl = "wss://ws.dungeon-lab.cn/"
 |---|---|---|
 | "Waiting for connection" | 后端未连接 | 检查 WebSocket 地址，确保后端运行 |
 | "Not paired or unavailable" | 设备未配对或连接断开 | 执行 `/dg qr` 扫描二维码重新配对 |
+| "Unknown pulse id" | 波形 ID 未注册 | 检查 `src/main/resources/pulse/` 中的 `.frame` 文件是否已注册 |
 | "Failed to open QR UI" | 二维码界面打开失败 | 检查游戏日志，尝试重新连接 |
 
 ## 日志输出

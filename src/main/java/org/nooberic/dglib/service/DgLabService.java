@@ -39,6 +39,10 @@ public interface DgLabService {
 
     boolean control(int channel, int strength, Pulse pulse);
 
+    void clearScheduledControlState(int channel);
+
+    boolean clearWave(int channel);
+
     boolean playBasicWave(int channel, int seconds);
 
     boolean playPulse(Pulse pulse);

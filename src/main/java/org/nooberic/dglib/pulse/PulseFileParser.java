@@ -32,12 +32,15 @@ public final class PulseFileParser {
     }
 
     private static Pulse parseFrameJson(String jsonText) {
-        JsonObject obj = JsonParser.parseString(jsonText).getAsJsonObject();
+        JsonElement root = JsonParser.parseString(jsonText);
+        JsonArray framesArray;
 
-        String name = readString(obj, "name", "");
-        Pulse.Channel channel = Pulse.Channel.from(readString(obj, "channel", "A"));
-        int seconds = readInt(obj, "seconds", 5);
-        JsonArray framesArray = obj.getAsJsonArray("frames");
+        if (root.isJsonArray()) {
+            framesArray = root.getAsJsonArray();
+        } else {
+            JsonObject obj = root.getAsJsonObject();
+            framesArray = obj.getAsJsonArray("frames");
+        }
 
         if (framesArray == null) {
             throw new IllegalArgumentException("Pulse JSON requires 'frames' array");
@@ -48,29 +51,9 @@ public final class PulseFileParser {
             frames.add(element.getAsString());
         }
 
-        Pulse pulse = new Pulse(name, channel, seconds, frames);
+        Pulse pulse = new Pulse("", Pulse.Channel.A, 1, frames);
         pulse.validate();
         return pulse;
-    }
-
-    private static String readString(JsonObject obj, String key, String fallback) {
-        JsonElement element = obj.get(key);
-        if (element == null || element.isJsonNull()) {
-            return fallback;
-        }
-        return element.getAsString();
-    }
-
-    private static int readInt(JsonObject obj, String key, int fallback) {
-        JsonElement element = obj.get(key);
-        if (element == null || element.isJsonNull()) {
-            return fallback;
-        }
-        try {
-            return element.getAsInt();
-        } catch (Exception ignored) {
-            return fallback;
-        }
     }
 
 }
