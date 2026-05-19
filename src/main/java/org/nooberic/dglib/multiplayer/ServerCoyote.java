@@ -28,6 +28,10 @@ public class ServerCoyote {
         return api.sendAndMapSuccess(playerId, org.nooberic.dglib.network.DgClientOperation.SET_STRENGTH, channel, value);
     }
 
+    public CompletableFuture<Boolean> setSoftStrength(int channel, int softValue) {
+        return api.sendAndMapSuccess(playerId, org.nooberic.dglib.network.DgClientOperation.SET_SOFT_STRENGTH, channel, softValue);
+    }
+
     public CompletableFuture<Boolean> clear(int channel) {
         return api.sendAndMapSuccess(playerId, org.nooberic.dglib.network.DgClientOperation.CLEAR, channel, 0);
     }
@@ -52,6 +56,12 @@ public class ServerCoyote {
         String payload = strength + "|" + pulseId;
         int encodedTenths = (int) Math.max(1L, Math.min(600L, Math.round(seconds * 10.0D)));
         return api.sendAndMapSuccess(playerId, org.nooberic.dglib.network.DgClientOperation.CONTROL, channel, encodedTenths, payload);
+    }
+
+    public CompletableFuture<Boolean> controlSoft(int channel, int softStrength, String pulseId, double seconds) {
+        String payload = softStrength + "|" + pulseId;
+        int encodedTenths = (int) Math.max(1L, Math.min(600L, Math.round(seconds * 10.0D)));
+        return api.sendAndMapSuccess(playerId, org.nooberic.dglib.network.DgClientOperation.CONTROL_SOFT, channel, encodedTenths, payload);
     }
 
     public CompletableFuture<Integer> getCurrentStrength(int channel) {

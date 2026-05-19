@@ -177,6 +177,19 @@ public final class DgLibCommands {
                                             ctx.getSource().sendSuccess(() -> Component.literal(msg), false);
                                             return ok ? 1 : 0;
                                         }))))
+                .then(Commands.literal("setsoft")
+                        .then(Commands.argument("channel", IntegerArgumentType.integer(1, 3))
+                                .then(Commands.argument("value", IntegerArgumentType.integer(0, 100))
+                                        .executes(ctx -> {
+                                            int channel = IntegerArgumentType.getInteger(ctx, "channel");
+                                            int value = IntegerArgumentType.getInteger(ctx, "value");
+                                            boolean ok = DgLibApi.get().setSoftStrength(channel, value);
+                                            String msg = ok
+                                                    ? String.format("§2[DG Lib]§r Set soft Ch%s to %d sent.", channel == 3 ? "1+2" : String.valueOf(channel), value)
+                                                    : "§c[DG Lib] Not paired or unavailable.";
+                                            ctx.getSource().sendSuccess(() -> Component.literal(msg), false);
+                                            return ok ? 1 : 0;
+                                        }))))
                                     .then(Commands.literal("increase")
                                         .then(Commands.argument("channel", IntegerArgumentType.integer(1, 3))
                                             .then(Commands.argument("delta", IntegerArgumentType.integer(1, 200))
@@ -246,6 +259,38 @@ public final class DgLibCommands {
                                                                 return 0;
                                                             }
                                                         }))))))
+                                        .then(Commands.literal("controlsoft")
+                                            .then(Commands.argument("channel", IntegerArgumentType.integer(1, 3))
+                                                .then(Commands.argument("strength", IntegerArgumentType.integer(0, 100))
+                                                    .then(Commands.argument("pulse_id", StringArgumentType.word())
+                                                        .suggests(PULSE_ID_SUGGESTIONS)
+                                                        .then(Commands.argument("seconds", DoubleArgumentType.doubleArg(0.1D, 60D))
+                                                            .executes(ctx -> {
+                                                                int channel = IntegerArgumentType.getInteger(ctx, "channel");
+                                                                int strength = IntegerArgumentType.getInteger(ctx, "strength");
+                                                                String pulseId = StringArgumentType.getString(ctx, "pulse_id");
+                                                                double seconds = DoubleArgumentType.getDouble(ctx, "seconds");
+                                                                try {
+                                                                boolean ok = DgLibApi.get().controlSoft(channel, strength, pulseId, seconds);
+                                                                if (!ok && DgLibApi.get().getPulse(pulseId) == null) {
+                                                                    ctx.getSource().sendFailure(Component.literal("§c[DG Lib] Unknown pulse id: " + pulseId));
+                                                                    ctx.getSource().sendSuccess(
+                                                                        () -> Component.literal("§7Registered: " + String.join(", ", DgLibApi.get().getAllPulses().keySet())),
+                                                                        false
+                                                                    );
+                                                                    return 0;
+                                                                }
+
+                                                                String msg = ok
+                                                                    ? String.format("§2[DG Lib]§r Soft control sent. Ch%s strength=%d, pulse='%s', %.1fs.", channel == 3 ? "1+2" : String.valueOf(channel), strength, pulseId, seconds)
+                                                                    : "§c[DG Lib] Not paired or unavailable.";
+                                                                ctx.getSource().sendSuccess(() -> Component.literal(msg), false);
+                                                                return ok ? 1 : 0;
+                                                                } catch (Throwable ex) {
+                                                                ctx.getSource().sendFailure(Component.literal("§c[DG Lib] Soft control failed: " + ex.getClass().getSimpleName() + " - " + String.valueOf(ex.getMessage())));
+                                                                return 0;
+                                                                }
+                                                            }))))))
                 .then(Commands.literal("wave")
                         .then(Commands.argument("pulse_id", StringArgumentType.word())
                                 .suggests(PULSE_ID_SUGGESTIONS)
@@ -318,6 +363,25 @@ public final class DgLibCommands {
                                                             coyote.setStrength(channel, value),
                                                             ok -> ok
                                                                     ? String.format("§2[DG Server]§r Set %s Ch%s to %d sent.", target.getGameProfile().getName(), channel == 3 ? "1+2" : String.valueOf(channel), value)
+                                                                    : String.format("§c[DG Server] %s operation rejected (not paired or unavailable).", target.getGameProfile().getName())
+                                                    );
+                                                    return 1;
+                                                })))))
+                .then(Commands.literal("setsoft")
+                        .then(Commands.argument("player", EntityArgument.player())
+                                .then(Commands.argument("channel", IntegerArgumentType.integer(1, 3))
+                                        .then(Commands.argument("value", IntegerArgumentType.integer(0, 100))
+                                                .executes(ctx -> {
+                                                    ServerPlayer target = EntityArgument.getPlayer(ctx, "player");
+                                                    int channel = IntegerArgumentType.getInteger(ctx, "channel");
+                                                    int value = IntegerArgumentType.getInteger(ctx, "value");
+
+                                                    ServerCoyote coyote = DgServerCoyoteApi.get().getCoyote(target);
+                                                    handleServerFuture(
+                                                            ctx.getSource(),
+                                                            coyote.setSoftStrength(channel, value),
+                                                            ok -> ok
+                                                                    ? String.format("§2[DG Server]§r Set soft %s Ch%s to %d sent.", target.getGameProfile().getName(), channel == 3 ? "1+2" : String.valueOf(channel), value)
                                                                     : String.format("§c[DG Server] %s operation rejected (not paired or unavailable).", target.getGameProfile().getName())
                                                     );
                                                     return 1;
@@ -398,6 +462,30 @@ public final class DgLibCommands {
                                                                     ok -> ok
                                                                         ? String.format("§2[DG Server]§r Control sent to %s: Ch%s=%d, pulse='%s', %.1fs.", target.getGameProfile().getName(), channel == 3 ? "1+2" : String.valueOf(channel), strength, pulseId, seconds)
                                                                         : String.format("§c[DG Server] %s control rejected (not paired / id not found / unavailable).", target.getGameProfile().getName())
+                                                                );
+                                                                return 1;
+                                                            })))))))
+                                    .then(Commands.literal("controlsoft")
+                                        .then(Commands.argument("player", EntityArgument.player())
+                                            .then(Commands.argument("channel", IntegerArgumentType.integer(1, 3))
+                                                .then(Commands.argument("strength", IntegerArgumentType.integer(0, 100))
+                                                    .then(Commands.argument("pulse_id", StringArgumentType.word())
+                                                        .suggests(PULSE_ID_SUGGESTIONS)
+                                                        .then(Commands.argument("seconds", DoubleArgumentType.doubleArg(0.1D, 60D))
+                                                            .executes(ctx -> {
+                                                                ServerPlayer target = EntityArgument.getPlayer(ctx, "player");
+                                                                int channel = IntegerArgumentType.getInteger(ctx, "channel");
+                                                                int strength = IntegerArgumentType.getInteger(ctx, "strength");
+                                                                String pulseId = StringArgumentType.getString(ctx, "pulse_id");
+                                                                double seconds = DoubleArgumentType.getDouble(ctx, "seconds");
+
+                                                                ServerCoyote coyote = DgServerCoyoteApi.get().getCoyote(target);
+                                                                handleServerFuture(
+                                                                    ctx.getSource(),
+                                                                    coyote.controlSoft(channel, strength, pulseId, seconds),
+                                                                    ok -> ok
+                                                                        ? String.format("§2[DG Server]§r Soft control sent to %s: Ch%s=%d, pulse='%s', %.1fs.", target.getGameProfile().getName(), channel == 3 ? "1+2" : String.valueOf(channel), strength, pulseId, seconds)
+                                                                        : String.format("§c[DG Server] %s soft control rejected (not paired / id not found / unavailable).", target.getGameProfile().getName())
                                                                 );
                                                                 return 1;
                                                             })))))))

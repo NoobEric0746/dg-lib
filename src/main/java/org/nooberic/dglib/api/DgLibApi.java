@@ -8,6 +8,7 @@ import org.nooberic.dglib.service.DeviceStatus;
 import org.nooberic.dglib.service.DgLabService;
 import org.nooberic.dglib.service.DgLabServiceImpl;
 import org.nooberic.dglib.service.StrengthFeedbackListener;
+import org.nooberic.dglib.util.SoftStrengthConverter;
 
 import java.util.Map;
 
@@ -119,6 +120,16 @@ public final class DgLibApi implements IDgLibApi {
     }
 
     @Override
+    public boolean setSoftStrength(int channel, int softValue) {
+        if (channel == 3) {
+            boolean channelAOk = setSoftStrength(1, softValue);
+            boolean channelBOk = setSoftStrength(2, softValue);
+            return channelAOk && channelBOk;
+        }
+        return setStrength(channel, SoftStrengthConverter.toRealStrength(channel, softValue));
+    }
+
+    @Override
     public boolean clear(int channel) {
         scheduler.clear(channel);
         return service.hardClear(channel);
@@ -136,6 +147,20 @@ public final class DgLibApi implements IDgLibApi {
             return channelAOk && channelBOk;
         }
         return scheduler.schedule(channel, strength, pulse, seconds);
+    }
+
+    @Override
+    public boolean controlSoft(int channel, int softStrength, String pulseId, double seconds) {
+        if (channel == 3) {
+            Pulse pulse = PulseRegistry.get(pulseId);
+            if (pulse == null) {
+                return false;
+            }
+            boolean channelAOk = scheduler.schedule(1, SoftStrengthConverter.toRealStrength(1, softStrength), pulse, seconds);
+            boolean channelBOk = scheduler.schedule(2, SoftStrengthConverter.toRealStrength(2, softStrength), pulse, seconds);
+            return channelAOk && channelBOk;
+        }
+        return control(channel, SoftStrengthConverter.toRealStrength(channel, softStrength), pulseId, seconds);
     }
 
     @Override

@@ -29,6 +29,9 @@ public final class DgClientPacketExecutor {
                 case SET_STRENGTH:
                     success = DgLibApi.get().setStrength(channel, value);
                     break;
+                case SET_SOFT_STRENGTH:
+                    success = DgLibApi.get().setSoftStrength(channel, value);
+                    break;
                 case CLEAR:
                     success = DgLibApi.get().clear(channel);
                     break;
@@ -75,6 +78,27 @@ public final class DgClientPacketExecutor {
                     }
                     String pulseId = payload.substring(sep + 1);
                     success = DgLibApi.get().control(channel, strength, pulseId, Math.max(1, value) / 10.0D);
+                    if (!success) {
+                        error = "control-rejected-or-failed";
+                    }
+                    break;
+                case CONTROL_SOFT:
+                    int softSep = payload == null ? -1 : payload.indexOf('|');
+                    if (softSep <= 0 || softSep >= payload.length() - 1) {
+                        error = "invalid-control-payload";
+                        success = false;
+                        break;
+                    }
+                    int softStrength;
+                    try {
+                        softStrength = Integer.parseInt(payload.substring(0, softSep));
+                    } catch (NumberFormatException ex) {
+                        error = "invalid-control-strength";
+                        success = false;
+                        break;
+                    }
+                    String softPulseId = payload.substring(softSep + 1);
+                    success = DgLibApi.get().controlSoft(channel, softStrength, softPulseId, Math.max(1, value) / 10.0D);
                     if (!success) {
                         error = "control-rejected-or-failed";
                     }
