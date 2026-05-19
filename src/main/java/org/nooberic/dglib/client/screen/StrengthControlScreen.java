@@ -1,5 +1,6 @@
-package org.nooberic.dglib.client;
+package org.nooberic.dglib.client.screen;
 
+import com.mojang.logging.LogUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractSliderButton;
@@ -12,7 +13,6 @@ import org.nooberic.dglib.Config;
 import org.nooberic.dglib.api.DgLibApi;
 import org.nooberic.dglib.service.DeviceStatus;
 import org.slf4j.Logger;
-import com.mojang.logging.LogUtils;
 
 /**
  * Strength Control Screen for DG-LAB channels
@@ -46,11 +46,11 @@ public class StrengthControlScreen extends Screen {
         int startX = (this.width - totalWidth) / 2;
 
         this.channelA = new ChannelSliders(1, "A", startX, topY, columnWidth, sliderHeight, rowSpacing,
-            status.getChannelALimit(), status.getChannelAStrength(),
-            DgLibApi.get().getPainStrength(1), DgLibApi.get().getSensationLowerLimit(1));
+                status.getChannelALimit(), status.getChannelAStrength(),
+                DgLibApi.get().getPainStrength(1), DgLibApi.get().getSensationLowerLimit(1));
         this.channelB = new ChannelSliders(2, "B", startX + columnWidth + gap, topY, columnWidth, sliderHeight, rowSpacing,
-            status.getChannelBLimit(), status.getChannelBStrength(),
-            DgLibApi.get().getPainStrength(2), DgLibApi.get().getSensationLowerLimit(2));
+                status.getChannelBLimit(), status.getChannelBStrength(),
+                DgLibApi.get().getPainStrength(2), DgLibApi.get().getSensationLowerLimit(2));
 
         this.hudModeButton = this.addRenderableWidget(Button.builder(Component.empty(), button -> {
             Config.cycleHudDisplayMode();
@@ -67,9 +67,9 @@ public class StrengthControlScreen extends Screen {
         this.addRenderableWidget(channelB.painSlider);
 
         this.pairButton = this.addRenderableWidget(Button.builder(Component.empty(), button -> onPairButtonClicked())
-            .pos(this.width / 2 - 65, this.height - 36)
-            .width(130)
-            .build());
+                .pos(this.width / 2 - 65, this.height - 36)
+                .width(130)
+                .build());
 
         updatePairButtonText();
         updateHudModeButtonText();
@@ -77,8 +77,8 @@ public class StrengthControlScreen extends Screen {
         LOGGER.info("[StrengthControlScreen] Channel A/B sliders initialized");
     }
 
-        @Override
-        public void tick() {
+    @Override
+    public void tick() {
         super.tick();
         DeviceStatus status = DgLibApi.get().getStatus();
         if (channelA != null) {
@@ -89,7 +89,7 @@ public class StrengthControlScreen extends Screen {
         }
         updatePairButtonText();
         updateHudModeButtonText();
-        }
+    }
 
     @Override
     public void render(GuiGraphics guiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
@@ -97,18 +97,18 @@ public class StrengthControlScreen extends Screen {
         guiGraphics.drawCenteredString(this.font, "DG-LAB 控制面板", this.width / 2, 12, 0xFFFFFF);
         guiGraphics.drawCenteredString(this.font, "强度上限请在手机端修改", this.width / 2, 28, 0x888888);
         guiGraphics.drawCenteredString(this.font,
-            "感受阈值是能感到电流刺激的最小强度,痛感阈值是感觉到痛的最小强度",
-            this.width / 2, this.height - 62, 0x888888);
+                "感受阈值是能感到电流刺激的最小强度,痛感阈值是感觉到痛的最小强度",
+                this.width / 2, this.height - 62, 0x888888);
         guiGraphics.drawCenteredString(this.font,
-            "模组可以读取这些值来实现更精准的强度控制(也可能没有这样做) : )",
-            this.width / 2, this.height - 50, 0x888888);
+                "模组可以读取这些值来实现更精准的强度控制(也可能没有这样做) : )",
+                this.width / 2, this.height - 50, 0x888888);
 
         super.render(guiGraphics, pMouseX, pMouseY, pPartialTick);
     }
 
     @Override
     public boolean keyPressed(int pKeyCode, int pScanCode, int pModifiers) {
-        if (pKeyCode == 256) { // ESC
+        if (pKeyCode == 256) {
             this.minecraft.setScreen(null);
             return true;
         }
@@ -117,40 +117,7 @@ public class StrengthControlScreen extends Screen {
 
     @Override
     public boolean isPauseScreen() {
-        return false; // 不暂停游戏
-    }
-
-    private static final class ChannelSliders {
-        private final int channel;
-        private final String tag;
-        private final ValueSlider maxSlider;
-        private final ValueSlider currentSlider;
-        private final ValueSlider painSlider;
-        private final ValueSlider floorSlider;
-
-        private ChannelSliders(int channel, String tag, int x, int y, int width, int height, int spacing,
-                               int maxValue, int currentValue, int painValue, int floorValue) {
-            this.channel = channel;
-            this.tag = tag;
-            this.maxSlider = new ValueSlider(x, y, width, height, tag + "上限", maxValue, false, v -> {});
-            this.currentSlider = new ValueSlider(x, y + spacing, width, height, tag + "当前强度", currentValue, true,
-                    v -> DgLibApi.get().setStrength(channel, v));
-            this.floorSlider = new ValueSlider(x, y + spacing * 2, width, height, tag + "感受阈值", floorValue, true,
-                    v -> DgLibApi.get().setSensationLowerLimit(channel, v));
-            this.painSlider = new ValueSlider(x, y + spacing * 3, width, height, tag + "痛感阈值", painValue, true,
-                v -> DgLibApi.get().setPainStrength(channel, v));
-        }
-
-        private void setLiveValues(int max, int current) {
-            maxSlider.setRawValue(max);
-            currentSlider.setRawValue(current);
-            painSlider.setRawValue(DgLibApi.get().getPainStrength(channel));
-            floorSlider.setRawValue(DgLibApi.get().getSensationLowerLimit(channel));
-        }
-    }
-
-    private interface OnChange {
-        void onChange(int value);
+        return false;
     }
 
     private void onPairButtonClicked() {
@@ -209,6 +176,37 @@ public class StrengthControlScreen extends Screen {
         }, "dg-lib-ui-qr-open");
         worker.setDaemon(true);
         worker.start();
+    }
+
+    private static final class ChannelSliders {
+        private final int channel;
+        private final ValueSlider maxSlider;
+        private final ValueSlider currentSlider;
+        private final ValueSlider painSlider;
+        private final ValueSlider floorSlider;
+
+        private ChannelSliders(int channel, String tag, int x, int y, int width, int height, int spacing,
+                               int maxValue, int currentValue, int painValue, int floorValue) {
+            this.channel = channel;
+            this.maxSlider = new ValueSlider(x, y, width, height, tag + "上限", maxValue, false, v -> {});
+            this.currentSlider = new ValueSlider(x, y + spacing, width, height, tag + "当前强度", currentValue, true,
+                    v -> DgLibApi.get().setStrength(channel, v));
+            this.floorSlider = new ValueSlider(x, y + spacing * 2, width, height, tag + "感受阈值", floorValue, true,
+                    v -> DgLibApi.get().setSensationLowerLimit(channel, v));
+            this.painSlider = new ValueSlider(x, y + spacing * 3, width, height, tag + "痛感阈值", painValue, true,
+                    v -> DgLibApi.get().setPainStrength(channel, v));
+        }
+
+        private void setLiveValues(int max, int current) {
+            maxSlider.setRawValue(max);
+            currentSlider.setRawValue(current);
+            painSlider.setRawValue(DgLibApi.get().getPainStrength(channel));
+            floorSlider.setRawValue(DgLibApi.get().getSensationLowerLimit(channel));
+        }
+    }
+
+    private interface OnChange {
+        void onChange(int value);
     }
 
     private static final class ValueSlider extends AbstractSliderButton {

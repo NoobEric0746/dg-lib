@@ -1,10 +1,9 @@
-package org.nooberic.dglib.api;
+package org.nooberic.dglib.client.control;
 
 import org.nooberic.dglib.pulse.Pulse;
 import org.nooberic.dglib.service.DgLabService;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +13,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-final class WaveControlScheduler {
+public final class WaveControlScheduler {
     private static final double MIN_SECONDS = 0.1D;
     private static final double MAX_SECONDS = 60D;
     private static final long MIN_DURATION_MILLIS = 100L;
@@ -25,14 +24,14 @@ final class WaveControlScheduler {
     private final Map<Integer, ChannelState> channelStates;
     private ScheduledExecutorService executor;
 
-    WaveControlScheduler(DgLabService service) {
+    public WaveControlScheduler(DgLabService service) {
         this.service = service;
         this.sequenceGenerator = new AtomicLong(0L);
         this.channelStates = new HashMap<>();
         this.executor = Executors.newSingleThreadScheduledExecutor();
     }
 
-    synchronized boolean schedule(int channel, int strength, Pulse pulse, double seconds) {
+    public synchronized boolean schedule(int channel, int strength, Pulse pulse, double seconds) {
         if (pulse == null) {
             return false;
         }
@@ -43,12 +42,11 @@ final class WaveControlScheduler {
         long durationMillis = secondsToMillis(safeSeconds);
         long sequence = sequenceGenerator.incrementAndGet();
         WaveEvent event = new WaveEvent(
-            normalizedChannel,
-            strength,
-            rebuildPulse(pulse, normalizedChannel, millisToWireSeconds(durationMillis)),
-            safeSeconds,
-            durationMillis,
-            sequence
+                normalizedChannel,
+                strength,
+                rebuildPulse(pulse, normalizedChannel, millisToWireSeconds(durationMillis)),
+                durationMillis,
+                sequence
         );
 
         ChannelState state = channelStates.computeIfAbsent(normalizedChannel, ignored -> new ChannelState());
@@ -65,15 +63,24 @@ final class WaveControlScheduler {
         return true;
     }
 
-    synchronized void shutdown() {
+    public synchronized void shutdown() {
         if (executor != null) {
             executor.shutdownNow();
         }
         channelStates.clear();
     }
 
-    synchronized void initialize() {
+    public synchronized void initialize() {
         ensureExecutor();
+    }
+
+    public synchronized void clear(int channel) {
+        if (channel == 3) {
+            clearChannel(1);
+            clearChannel(2);
+            return;
+        }
+        clearChannel(channel == 2 ? 2 : 1);
     }
 
     private Pulse rebuildPulse(Pulse pulse, int channel, int seconds) {
@@ -99,8 +106,7 @@ final class WaveControlScheduler {
         long generation = ++state.generation;
         event.startedAtMillis = System.currentTimeMillis();
         state.activeEvent = event;
-        int wireSeconds = millisToWireSeconds(event.remainingMillis);
-        event.pulse = rebuildPulse(event.pulse, event.channel, wireSeconds);
+        event.pulse = rebuildPulse(event.pulse, event.channel, millisToWireSeconds(event.remainingMillis));
         try {
             executor.schedule(
                     () -> finishEvent(event.channel, generation),
@@ -109,8 +115,7 @@ final class WaveControlScheduler {
             );
         } catch (RejectedExecutionException ex) {
             state.activeEvent = null;
-            service.clearWave(event.channel);
-            service.setStrength(event.channel, 0);
+            service.hardClear(event.channel);
             return false;
         }
         return true;
@@ -127,8 +132,7 @@ final class WaveControlScheduler {
         active.remainingMillis = remainingMillis;
         active.startedAtMillis = 0L;
         service.clearScheduledControlState(active.channel);
-        service.clearWave(active.channel);
-        service.setStrength(active.channel, 0);
+        service.hardClear(active.channel);
         state.waitingEvents.add(active);
         state.activeEvent = null;
         state.generation++;
@@ -148,8 +152,8 @@ final class WaveControlScheduler {
         }
 
         service.clearScheduledControlState(channel);
-        service.clearWave(channel);
         service.setStrength(channel, 0);
+        service.hardClear(channel);
     }
 
     private WaveEvent pollNextEvent(ChannelState state) {
@@ -161,6 +165,15 @@ final class WaveControlScheduler {
         WaveEvent next = candidates.get(0);
         state.waitingEvents.remove(next);
         return next;
+    }
+
+    private void clearChannel(int channel) {
+        ChannelState state = channelStates.computeIfAbsent(channel, ignored -> new ChannelState());
+        state.waitingEvents.clear();
+        state.activeEvent = null;
+        state.generation++;
+        service.clearScheduledControlState(channel);
+        service.hardClear(channel);
     }
 
     private void ensureExecutor() {
@@ -196,15 +209,13 @@ final class WaveControlScheduler {
         private final int strength;
         private final long sequence;
         private Pulse pulse;
-        private final double seconds;
         private long remainingMillis;
         private long startedAtMillis;
 
-        private WaveEvent(int channel, int strength, Pulse pulse, double seconds, long remainingMillis, long sequence) {
+        private WaveEvent(int channel, int strength, Pulse pulse, long remainingMillis, long sequence) {
             this.channel = channel;
             this.strength = strength;
             this.pulse = pulse;
-            this.seconds = seconds;
             this.remainingMillis = remainingMillis;
             this.sequence = sequence;
             this.startedAtMillis = 0L;

@@ -1,4 +1,4 @@
-package org.nooberic.dglib.client;
+package org.nooberic.dglib.client.key;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
@@ -14,12 +14,12 @@ public final class DgKeyBindings {
             CATEGORY
     );
 
-        public static final KeyMapping EMERGENCY_STOP = new KeyMapping(
+    public static final KeyMapping EMERGENCY_STOP = new KeyMapping(
             "key.dglib.emergency_stop",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_I,
             CATEGORY
-        );
+    );
 
     private DgKeyBindings() {
     }

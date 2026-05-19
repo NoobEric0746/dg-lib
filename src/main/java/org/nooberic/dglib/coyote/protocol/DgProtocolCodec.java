@@ -1,7 +1,7 @@
-package org.nooberic.dglib.protocol;
+package org.nooberic.dglib.coyote.protocol;
 
-import com.google.gson.JsonElement;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;

@@ -1,4 +1,4 @@
-package org.nooberic.dglib.client;
+package org.nooberic.dglib.coyote.connection;
 
 public interface WsTransportClient {
     void connect(String wsUrl, int timeoutMs);

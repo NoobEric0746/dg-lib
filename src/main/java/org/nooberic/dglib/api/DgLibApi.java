@@ -1,5 +1,6 @@
 package org.nooberic.dglib.api;
 
+import org.nooberic.dglib.client.control.WaveControlScheduler;
 import org.nooberic.dglib.pulse.Pulse;
 import org.nooberic.dglib.pulse.PulseRegistry;
 import org.nooberic.dglib.service.ConnectionState;
@@ -119,9 +120,8 @@ public final class DgLibApi implements IDgLibApi {
 
     @Override
     public boolean clear(int channel) {
-        boolean clearWaveOk = service.clearWave(channel);
-        boolean setStrengthOk = service.setStrength(channel, 0);
-        return clearWaveOk && setStrengthOk;
+        scheduler.clear(channel);
+        return service.hardClear(channel);
     }
 
     @Override

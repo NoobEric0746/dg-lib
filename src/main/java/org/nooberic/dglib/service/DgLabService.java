@@ -41,6 +41,8 @@ public interface DgLabService {
 
     void clearScheduledControlState(int channel);
 
+    boolean hardClear(int channel);
+
     boolean clearWave(int channel);
 
     boolean playBasicWave(int channel, int seconds);

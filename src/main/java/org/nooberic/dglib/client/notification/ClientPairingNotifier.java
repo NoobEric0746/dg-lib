@@ -1,7 +1,8 @@
-package org.nooberic.dglib.client;
+package org.nooberic.dglib.client.notification;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
+import org.nooberic.dglib.client.screen.QrCodeScreen;
 
 public final class ClientPairingNotifier {
     private ClientPairingNotifier() {

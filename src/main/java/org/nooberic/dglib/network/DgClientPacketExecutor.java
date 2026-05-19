@@ -74,7 +74,7 @@ public final class DgClientPacketExecutor {
                         break;
                     }
                     String pulseId = payload.substring(sep + 1);
-                    success = DgLibApi.get().control(channel, strength, pulseId, Math.max(1, value));
+                    success = DgLibApi.get().control(channel, strength, pulseId, Math.max(1, value) / 10.0D);
                     if (!success) {
                         error = "control-rejected-or-failed";
                     }

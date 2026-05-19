@@ -1,4 +1,4 @@
-package org.nooberic.dglib.protocol;
+package org.nooberic.dglib.coyote.protocol;
 
 public class DgSocketMessage {
     private final String type;

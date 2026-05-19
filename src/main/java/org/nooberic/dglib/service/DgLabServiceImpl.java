@@ -4,11 +4,13 @@ import com.mojang.logging.LogUtils;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import org.nooberic.dglib.Config;
+import org.nooberic.dglib.client.notification.ClientDisconnectNotifier;
+import org.nooberic.dglib.client.notification.ClientPairingNotifier;
+import org.nooberic.dglib.coyote.connection.JdkWsTransportClient;
+import org.nooberic.dglib.coyote.connection.WsTransportClient;
+import org.nooberic.dglib.coyote.protocol.DgProtocolCodec;
+import org.nooberic.dglib.coyote.protocol.DgSocketMessage;
 import org.nooberic.dglib.pulse.Pulse;
-import org.nooberic.dglib.client.JdkWsTransportClient;
-import org.nooberic.dglib.client.WsTransportClient;
-import org.nooberic.dglib.protocol.DgProtocolCodec;
-import org.nooberic.dglib.protocol.DgSocketMessage;
 import org.nooberic.dglib.util.QrCodeGenerator;
 import org.slf4j.Logger;
 
@@ -22,6 +24,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class DgLabServiceImpl implements DgLabService {
     private static final Logger LOGGER = LogUtils.getLogger();
+    private static final String[] CLEAR_COVER_WAVE_V3 = new String[]{
+            "0A0A0A0A00000000"
+    };
     private static final String[] BASIC_WAVE_V3 = new String[]{
             "0A0A0A0A00000000",
             "0A0A0A0A14141414",
@@ -311,6 +316,32 @@ public class DgLabServiceImpl implements DgLabService {
     }
 
     @Override
+    public boolean hardClear(int channel) {
+        if (!isPaired()) {
+            return false;
+        }
+        if (channel == 3) {
+            boolean channelAOk = hardClear(1);
+            boolean channelBOk = hardClear(2);
+            return channelAOk && channelBOk;
+        }
+
+        int normalizedChannel = normalizeChannel(channel);
+        Pulse coverPulse = new Pulse(
+                "clear_cover",
+                normalizedChannel == 2 ? Pulse.Channel.B : Pulse.Channel.A,
+                1,
+                java.util.List.of(CLEAR_COVER_WAVE_V3)
+        );
+
+        boolean cleared = clearWave(normalizedChannel);
+        boolean covered = playPulse(coverPulse);
+        boolean zeroed = setStrength(normalizedChannel, 0);
+        LOGGER.info("DG-LAB hard clear executed: channel={}, cleared={}, covered={}, zeroed={}", normalizedChannel, cleared, covered, zeroed);
+        return cleared && covered && zeroed;
+    }
+
+    @Override
     public boolean clearWave(int channel) {
         if (!isPaired()) {
             return false;
@@ -414,7 +445,7 @@ public class DgLabServiceImpl implements DgLabService {
                     targetId = tid;
                     state = ConnectionState.PAIRED;
                     LOGGER.info("DG-LAB paired successfully! targetId: {}", targetId);
-                    DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> org.nooberic.dglib.client.ClientPairingNotifier.onPairedSuccess());
+                    DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientPairingNotifier.onPairedSuccess());
                 } else if (msg.isEmpty() || "targetId".equals(msg)) {
                     LOGGER.info("DG-LAB awaiting APP binding (clientId assigned)");
                 } else {
@@ -427,7 +458,7 @@ public class DgLabServiceImpl implements DgLabService {
                 targetId = "";
                 state = ConnectionState.CONNECTED;
                 LOGGER.info("DG-LAB connection broken, awaiting re-pair");
-                DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> org.nooberic.dglib.client.ClientDisconnectNotifier.onDeviceDisconnected());
+                DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientDisconnectNotifier.onDeviceDisconnected());
                 return;
             }
 

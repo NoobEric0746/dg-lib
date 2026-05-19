@@ -1,4 +1,4 @@
-package org.nooberic.dglib.client;
+package org.nooberic.dglib.coyote.connection;
 
 import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
@@ -13,7 +13,7 @@ import java.util.concurrent.CompletionStage;
 
 public class JdkWsTransportClient implements WsTransportClient {
     private static final Logger LOGGER = LogUtils.getLogger();
-    
+
     private volatile Listener listener;
     private volatile WebSocket webSocket;
 

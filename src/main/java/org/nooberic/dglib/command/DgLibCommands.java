@@ -13,8 +13,8 @@ import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import org.nooberic.dglib.api.DgLibApi;
-import org.nooberic.dglib.client.QrCodeScreen;
-import org.nooberic.dglib.client.StrengthControlScreen;
+import org.nooberic.dglib.client.screen.QrCodeScreen;
+import org.nooberic.dglib.client.screen.StrengthControlScreen;
 import org.nooberic.dglib.multiplayer.CoyoteStatusSnapshot;
 import org.nooberic.dglib.multiplayer.DgServerCoyoteApi;
 import org.nooberic.dglib.multiplayer.ServerCoyote;
@@ -383,20 +383,20 @@ public final class DgLibCommands {
                                                 .then(Commands.argument("strength", IntegerArgumentType.integer(0, 200))
                                                     .then(Commands.argument("pulse_id", StringArgumentType.word())
                                                         .suggests(PULSE_ID_SUGGESTIONS)
-                                                        .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 60))
+                                                        .then(Commands.argument("seconds", DoubleArgumentType.doubleArg(0.1D, 60D))
                                                             .executes(ctx -> {
                                                                 ServerPlayer target = EntityArgument.getPlayer(ctx, "player");
                                                                 int channel = IntegerArgumentType.getInteger(ctx, "channel");
                                                                 int strength = IntegerArgumentType.getInteger(ctx, "strength");
                                                                 String pulseId = StringArgumentType.getString(ctx, "pulse_id");
-                                                                int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
+                                                                double seconds = DoubleArgumentType.getDouble(ctx, "seconds");
 
                                                                 ServerCoyote coyote = DgServerCoyoteApi.get().getCoyote(target);
                                                                 handleServerFuture(
                                                                     ctx.getSource(),
                                                                     coyote.control(channel, strength, pulseId, seconds),
                                                                     ok -> ok
-                                                                        ? String.format("§2[DG Server]§r Control sent to %s: Ch%s=%d, pulse='%s', %ds.", target.getGameProfile().getName(), channel == 3 ? "1+2" : String.valueOf(channel), strength, pulseId, seconds)
+                                                                        ? String.format("§2[DG Server]§r Control sent to %s: Ch%s=%d, pulse='%s', %.1fs.", target.getGameProfile().getName(), channel == 3 ? "1+2" : String.valueOf(channel), strength, pulseId, seconds)
                                                                         : String.format("§c[DG Server] %s control rejected (not paired / id not found / unavailable).", target.getGameProfile().getName())
                                                                 );
                                                                 return 1;
