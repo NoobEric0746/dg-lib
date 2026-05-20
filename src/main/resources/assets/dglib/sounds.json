@@ -1,0 +1,10 @@
+{
+  "electric_shock": {
+    "sounds": [
+      {
+        "name": "dglib:electric_shock",
+        "stream": false
+      }
+    ]
+  }
+}
