@@ -2,6 +2,7 @@ plugins {
     id 'eclipse'
     id 'idea'
     id 'net.minecraftforge.gradle' version '[6.0.16,6.2)'
+    id 'maven-publish'
 }
 
 
@@ -14,6 +15,7 @@ base {
 
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(17)
+    withSourcesJar()
 }
 
 minecraft {
@@ -121,6 +123,31 @@ repositories {
     // flatDir {
     //     dir 'libs'
     // }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            groupId = mod_group_id
+            artifactId = mod_id
+            version = mod_version
+
+            pom {
+                name = mod_name
+                description = mod_description
+                url = 'https://github.com/NoobEric0746/dg-lib'
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = 'localRepo'
+            url = uri(layout.buildDirectory.dir('repo'))
+        }
+    }
 }
 
 dependencies {

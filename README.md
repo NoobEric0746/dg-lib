@@ -2,6 +2,64 @@
 
 一个用于 Minecraft Forge 1.20.1 的 DG-LAB 设备控制库，通过 WebSocket 连接到 DG-LAB 后端，支持设备配对和强度控制。
 
+## 发布/依赖信息
+
+- Group ID：`org.nooberic`
+- Artifact ID：`dglib`
+- Mod ID：`dglib`
+- 当前版本：`1.0-SNAPSHOT`
+- 兼容版本：Minecraft `1.20.1` / Forge `47.4.20`
+
+### 版本说明
+
+- 当前为开发版：`1.0-SNAPSHOT`
+- 发布时建议改成稳定语义化版本，例如 `1.0.0`
+
+### 作为其他模组的依赖
+
+建议在依赖方使用：
+
+- 编译期：`compileOnly`
+- 运行期：`runtimeOnly`
+
+如果你希望强制前置，则在依赖方的 `mods.toml` 中声明 `mandatory=true`。
+
+#### Gradle 依赖示例
+
+```groovy
+repositories {
+    maven {
+        url = uri("https://nooberic0746.github.io/dg-lib/")
+    }
+}
+
+dependencies {
+    compileOnly fg.deobf("org.nooberic:dglib:1.0-SNAPSHOT")
+    runtimeOnly fg.deobf("org.nooberic:dglib:1.0-SNAPSHOT")
+}
+```
+
+#### 依赖方 `mods.toml` 示例
+
+```toml
+[[dependencies.yourmodid]]
+modId = "dglib"
+mandatory = true
+versionRange = "[1.0.0,)"
+ordering = "AFTER"
+side = "BOTH"
+```
+
+### 运行时入口
+
+- `org.nooberic.dglib.api.DgLibApi`
+
+### 已注册的内置波形
+
+- `basic_breath`
+- `chaos`
+- `const`
+
 ## 功能特性
 
 - ✅ WebSocket 连接管理
