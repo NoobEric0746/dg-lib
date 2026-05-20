@@ -1,5 +1,6 @@
 package org.nooberic.dglib.api;
 
+import net.minecraft.server.level.ServerPlayer;
 import org.nooberic.dglib.client.control.WaveControlScheduler;
 import org.nooberic.dglib.pulse.Pulse;
 import org.nooberic.dglib.pulse.PulseRegistry;
@@ -8,6 +9,7 @@ import org.nooberic.dglib.service.DeviceStatus;
 import org.nooberic.dglib.service.DgLabService;
 import org.nooberic.dglib.service.DgLabServiceImpl;
 import org.nooberic.dglib.service.StrengthFeedbackListener;
+import org.nooberic.dglib.util.ElectricityParticleUtil;
 import org.nooberic.dglib.util.SoftStrengthConverter;
 
 import java.util.Map;
@@ -181,6 +183,16 @@ public final class DgLibApi implements IDgLibApi {
     @Override
     public boolean registerPulse(String id, String pulseFileName) {
         return PulseRegistry.registerFromResource(id, pulseFileName);
+    }
+
+    @Override
+    public void spawnElectricityParticles(ServerPlayer player) {
+        ElectricityParticleUtil.spawnAroundPlayer(player);
+    }
+
+    @Override
+    public void spawnElectricityParticles(ServerPlayer player, int particleCount) {
+        ElectricityParticleUtil.spawnAroundPlayer(player, particleCount);
     }
 
     @Override
