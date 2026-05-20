@@ -12,6 +12,7 @@ import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.nooberic.dglib.command.DgLibCommands;
+import org.nooberic.dglib.client.particle.DgParticleTypes;
 import org.nooberic.dglib.multiplayer.DgServerCoyoteApi;
 import org.nooberic.dglib.network.DgNetworking;
 import org.slf4j.Logger;
@@ -25,6 +26,7 @@ public class dglib {
     public dglib() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
         modEventBus.addListener(this::commonSetup);
+        DgParticleTypes.PARTICLES.register(modEventBus);
         MinecraftForge.EVENT_BUS.register(this);
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }

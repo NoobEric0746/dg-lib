@@ -20,6 +20,7 @@ import org.nooberic.dglib.multiplayer.DgServerCoyoteApi;
 import org.nooberic.dglib.multiplayer.ServerCoyote;
 import org.nooberic.dglib.pulse.Pulse;
 import org.nooberic.dglib.service.DeviceStatus;
+import org.nooberic.dglib.util.ElectricityParticleUtil;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -162,6 +163,13 @@ public final class DgLibCommands {
                                     }
                                 }
                             });
+                            return 1;
+                        }))
+                .then(Commands.literal("particle")
+                        .executes(ctx -> {
+                            ServerPlayer player = ctx.getSource().getPlayerOrException();
+                            ElectricityParticleUtil.spawnAroundPlayer(player);
+                            ctx.getSource().sendSuccess(() -> Component.literal("§2[DG Lib]§r Spawned electricity particles around you."), false);
                             return 1;
                         }))
                 .then(Commands.literal("set")
