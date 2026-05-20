@@ -60,6 +60,77 @@ side = "BOTH"
 - `chaos`
 - `const`
 
+### 给其他开发者的接入教程
+
+如果你正在编写另一个 Forge `1.20.1` 模组，并希望把 `DG Lib` 作为前置库接入，可以按下面步骤配置。
+
+#### 第一步：在 `build.gradle` 添加 Maven 仓库
+
+```groovy
+repositories {
+    maven {
+        url = uri("https://nooberic0746.github.io/dg-lib/")
+    }
+}
+```
+
+#### 第二步：添加依赖坐标
+
+```groovy
+dependencies {
+    compileOnly fg.deobf("org.nooberic:dglib:1.0-SNAPSHOT")
+    runtimeOnly fg.deobf("org.nooberic:dglib:1.0-SNAPSHOT")
+}
+```
+
+说明：
+
+- `compileOnly`：用于编译时引用 API
+- `runtimeOnly`：用于开发运行时把 `DG Lib` 一起加载进游戏
+
+#### 第三步：在你的 `mods.toml` 声明前置依赖
+
+```toml
+[[dependencies.yourmodid]]
+modId = "dglib"
+mandatory = true
+versionRange = "[1.0.0,)"
+ordering = "AFTER"
+side = "BOTH"
+```
+
+请把 `yourmodid` 替换成你自己的模组 ID。
+
+#### 第四步：在代码中使用 API
+
+运行时入口类：
+
+- `org.nooberic.dglib.api.DgLibApi`
+
+示例：
+
+```java
+import org.nooberic.dglib.api.DgLibApi;
+```
+
+然后根据你的需求调用 `DgLibApi` 提供的公开能力。
+
+#### 第五步：版本建议
+
+当前仓库示例使用的是开发版：
+
+- `org.nooberic:dglib:1.0-SNAPSHOT`
+
+如果后续发布稳定版，建议依赖正式版本号，例如：
+
+- `org.nooberic:dglib:1.0.0`
+
+对应地，依赖方的 `versionRange` 也建议写成更明确的范围，例如：
+
+```toml
+versionRange = "[1.0.0,2.0.0)"
+```
+
 ## 功能特性
 
 - ✅ WebSocket 连接管理
