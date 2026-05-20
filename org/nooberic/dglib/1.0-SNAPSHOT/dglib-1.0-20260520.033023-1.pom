@@ -1,24 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <!-- This module was also published with a richer model, Gradle metadata,  -->
-  <!-- which should be used instead. Do not delete the following line which  -->
-  <!-- is to indicate to Gradle or any Gradle module metadata file consumer  -->
-  <!-- that they should prefer consuming it instead. -->
-  <!-- do_not_remove: published-with-gradle-metadata -->
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>org.nooberic</groupId>
-  <artifactId>dglib</artifactId>
-  <version>1.0-SNAPSHOT</version>
-  <name>DG Lib</name>
-  <description>DG-LAB è®¾å¤æ§å¶åºï¼æä¾ WebSocket è¿æ¥ãè®¾å¤éå¯¹ãå¼ºåº¦æ§å¶ãæ³¢å½¢è°åº¦ä¸æ¸¸æå UI æ¯æã</description>
-  <url>https://github.com/NoobEric0746/dg-lib</url>
-  <dependencies>
-    <dependency>
-      <groupId>net.minecraftforge</groupId>
-      <artifactId>forge</artifactId>
-      <version>1.20.1-47.4.20_mapped_official_1.20.1</version>
-      <scope>runtime</scope>
-    </dependency>
-  </dependencies>
-</project>

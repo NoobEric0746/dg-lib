@@ -3,32 +3,27 @@
   <groupId>org.nooberic</groupId>
   <artifactId>dglib</artifactId>
   <versioning>
-    <lastUpdated>20260520033223</lastUpdated>
+    <lastUpdated>20260520095918</lastUpdated>
     <snapshot>
-      <timestamp>20260520.033223</timestamp>
-      <buildNumber>2</buildNumber>
+      <timestamp>20260520.095918</timestamp>
+      <buildNumber>1</buildNumber>
     </snapshot>
     <snapshotVersions>
       <snapshotVersion>
-        <extension>pom</extension>
-        <value>1.0-20260520.033223-2</value>
-        <updated>20260520033223</updated>
-      </snapshotVersion>
-      <snapshotVersion>
         <classifier>sources</classifier>
         <extension>jar</extension>
-        <value>1.0-20260520.033223-2</value>
-        <updated>20260520033223</updated>
+        <value>1.0-20260520.095918-1</value>
+        <updated>20260520095918</updated>
       </snapshotVersion>
       <snapshotVersion>
         <extension>jar</extension>
-        <value>1.0-20260520.033223-2</value>
-        <updated>20260520033223</updated>
+        <value>1.0-20260520.095918-1</value>
+        <updated>20260520095918</updated>
       </snapshotVersion>
       <snapshotVersion>
-        <extension>module</extension>
-        <value>1.0-20260520.033223-2</value>
-        <updated>20260520033223</updated>
+        <extension>pom</extension>
+        <value>1.0-20260520.095918-1</value>
+        <updated>20260520095918</updated>
       </snapshotVersion>
     </snapshotVersions>
   </versioning>
