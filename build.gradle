@@ -128,7 +128,8 @@ repositories {
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            from components.java
+            artifact tasks.named('jar')
+            artifact tasks.named('sourcesJar')
 
             groupId = mod_group_id
             artifactId = mod_id
@@ -138,6 +139,13 @@ publishing {
                 name = mod_name
                 description = mod_description
                 url = 'https://github.com/NoobEric0746/dg-lib'
+                withXml {
+                    def pomNode = asNode()
+                    def dependenciesNode = pomNode.'dependencies'
+                    if (dependenciesNode && !dependenciesNode.isEmpty()) {
+                        pomNode.remove(dependenciesNode[0])
+                    }
+                }
             }
         }
     }
