@@ -165,6 +165,7 @@ public final class DgLibCommands {
                             return 1;
                         }))
                 .then(Commands.literal("particle")
+                    .requires(source -> source.hasPermission(2))
                         .executes(ctx -> {
                             ServerPlayer player = ctx.getSource().getPlayerOrException();
                             ElectricityParticleUtil.spawnAroundPlayer(player);
