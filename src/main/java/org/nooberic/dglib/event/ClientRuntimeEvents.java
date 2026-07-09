@@ -5,6 +5,7 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundSource;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
@@ -12,6 +13,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.nooberic.dglib.api.DgLibApi;
+import org.nooberic.dglib.command.DgClientCommands;
 import org.nooberic.dglib.client.key.DgKeyBindings;
 import org.nooberic.dglib.client.screen.StrengthControlScreen;
 import org.nooberic.dglib.client.sound.DgSoundEvents;
@@ -40,6 +42,11 @@ final class ClientForgeRuntimeEvents {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private ClientForgeRuntimeEvents() {
+    }
+
+    @SubscribeEvent
+    public static void onRegisterClientCommands(RegisterClientCommandsEvent event) {
+        DgClientCommands.register(event.getDispatcher());
     }
 
     @SubscribeEvent
