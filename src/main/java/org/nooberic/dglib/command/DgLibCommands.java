@@ -1,7 +1,6 @@
 package org.nooberic.dglib.command;
 
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
@@ -240,12 +239,12 @@ public final class DgLibCommands {
                                 .then(Commands.argument("strength", IntegerArgumentType.integer(0, 200))
                                         .then(Commands.argument("pulse_id", StringArgumentType.word())
                                                 .suggests(PULSE_ID_SUGGESTIONS)
-                                                .then(Commands.argument("seconds", DoubleArgumentType.doubleArg(0.1D, 60D))
+                                                .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 60))
                                                         .executes(ctx -> {
                                                             int channel = IntegerArgumentType.getInteger(ctx, "channel");
                                                             int strength = IntegerArgumentType.getInteger(ctx, "strength");
                                                             String pulseId = StringArgumentType.getString(ctx, "pulse_id");
-                                                            double seconds = DoubleArgumentType.getDouble(ctx, "seconds");
+                                                            int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
                                                             try {
                                                                 boolean ok = DgLibApi.get().control(channel, strength, pulseId, seconds);
                                                                 if (!ok && DgLibApi.get().getPulse(pulseId) == null) {
@@ -258,7 +257,7 @@ public final class DgLibCommands {
                                                                 }
 
                                                                 String msg = ok
-                    ? String.format("§2[DG Lib]§r Control sent. Ch%s strength=%d, pulse='%s', %.1fs.", channel == 3 ? "1+2" : String.valueOf(channel), strength, pulseId, seconds)
+                    ? String.format("§2[DG Lib]§r Control sent. Ch%s strength=%d, pulse='%s', %ds.", channel == 3 ? "1+2" : String.valueOf(channel), strength, pulseId, seconds)
                                                                         : "§c[DG Lib] Not paired or unavailable.";
                                                                 ctx.getSource().sendSuccess(() -> Component.literal(msg), false);
                                                                 return ok ? 1 : 0;
@@ -272,12 +271,12 @@ public final class DgLibCommands {
                                                 .then(Commands.argument("strength", IntegerArgumentType.integer(0, 100))
                                                     .then(Commands.argument("pulse_id", StringArgumentType.word())
                                                         .suggests(PULSE_ID_SUGGESTIONS)
-                                                        .then(Commands.argument("seconds", DoubleArgumentType.doubleArg(0.1D, 60D))
+                                                        .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 60))
                                                             .executes(ctx -> {
                                                                 int channel = IntegerArgumentType.getInteger(ctx, "channel");
                                                                 int strength = IntegerArgumentType.getInteger(ctx, "strength");
                                                                 String pulseId = StringArgumentType.getString(ctx, "pulse_id");
-                                                                double seconds = DoubleArgumentType.getDouble(ctx, "seconds");
+                                                                int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
                                                                 try {
                                                                 boolean ok = DgLibApi.get().controlSoft(channel, strength, pulseId, seconds);
                                                                 if (!ok && DgLibApi.get().getPulse(pulseId) == null) {
@@ -290,7 +289,7 @@ public final class DgLibCommands {
                                                                 }
 
                                                                 String msg = ok
-                                                                    ? String.format("§2[DG Lib]§r Soft control sent. Ch%s strength=%d, pulse='%s', %.1fs.", channel == 3 ? "1+2" : String.valueOf(channel), strength, pulseId, seconds)
+                                                                    ? String.format("§2[DG Lib]§r Soft control sent. Ch%s strength=%d, pulse='%s', %ds.", channel == 3 ? "1+2" : String.valueOf(channel), strength, pulseId, seconds)
                                                                     : "§c[DG Lib] Not paired or unavailable.";
                                                                 ctx.getSource().sendSuccess(() -> Component.literal(msg), false);
                                                                 return ok ? 1 : 0;
@@ -455,20 +454,20 @@ public final class DgLibCommands {
                                                 .then(Commands.argument("strength", IntegerArgumentType.integer(0, 200))
                                                     .then(Commands.argument("pulse_id", StringArgumentType.word())
                                                         .suggests(PULSE_ID_SUGGESTIONS)
-                                                        .then(Commands.argument("seconds", DoubleArgumentType.doubleArg(0.1D, 60D))
+                                                        .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 60))
                                                             .executes(ctx -> {
                                                                 ServerPlayer target = EntityArgument.getPlayer(ctx, "player");
                                                                 int channel = IntegerArgumentType.getInteger(ctx, "channel");
                                                                 int strength = IntegerArgumentType.getInteger(ctx, "strength");
                                                                 String pulseId = StringArgumentType.getString(ctx, "pulse_id");
-                                                                double seconds = DoubleArgumentType.getDouble(ctx, "seconds");
+                                                                int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
 
                                                                 ServerCoyote coyote = DgServerCoyoteApi.get().getCoyote(target);
                                                                 handleServerFuture(
                                                                     ctx.getSource(),
                                                                     coyote.control(channel, strength, pulseId, seconds),
                                                                     ok -> ok
-                                                                        ? String.format("§2[DG Server]§r Control sent to %s: Ch%s=%d, pulse='%s', %.1fs.", target.getGameProfile().getName(), channel == 3 ? "1+2" : String.valueOf(channel), strength, pulseId, seconds)
+                                                                        ? String.format("§2[DG Server]§r Control sent to %s: Ch%s=%d, pulse='%s', %ds.", target.getGameProfile().getName(), channel == 3 ? "1+2" : String.valueOf(channel), strength, pulseId, seconds)
                                                                         : String.format("§c[DG Server] %s control rejected (not paired / id not found / unavailable).", target.getGameProfile().getName())
                                                                 );
                                                                 return 1;
@@ -479,20 +478,20 @@ public final class DgLibCommands {
                                                 .then(Commands.argument("strength", IntegerArgumentType.integer(0, 100))
                                                     .then(Commands.argument("pulse_id", StringArgumentType.word())
                                                         .suggests(PULSE_ID_SUGGESTIONS)
-                                                        .then(Commands.argument("seconds", DoubleArgumentType.doubleArg(0.1D, 60D))
+                                                        .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 60))
                                                             .executes(ctx -> {
                                                                 ServerPlayer target = EntityArgument.getPlayer(ctx, "player");
                                                                 int channel = IntegerArgumentType.getInteger(ctx, "channel");
                                                                 int strength = IntegerArgumentType.getInteger(ctx, "strength");
                                                                 String pulseId = StringArgumentType.getString(ctx, "pulse_id");
-                                                                double seconds = DoubleArgumentType.getDouble(ctx, "seconds");
+                                                                int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
 
                                                                 ServerCoyote coyote = DgServerCoyoteApi.get().getCoyote(target);
                                                                 handleServerFuture(
                                                                     ctx.getSource(),
                                                                     coyote.controlSoft(channel, strength, pulseId, seconds),
                                                                     ok -> ok
-                                                                        ? String.format("§2[DG Server]§r Soft control sent to %s: Ch%s=%d, pulse='%s', %.1fs.", target.getGameProfile().getName(), channel == 3 ? "1+2" : String.valueOf(channel), strength, pulseId, seconds)
+                                                                        ? String.format("§2[DG Server]§r Soft control sent to %s: Ch%s=%d, pulse='%s', %ds.", target.getGameProfile().getName(), channel == 3 ? "1+2" : String.valueOf(channel), strength, pulseId, seconds)
                                                                         : String.format("§c[DG Server] %s soft control rejected (not paired / id not found / unavailable).", target.getGameProfile().getName())
                                                                 );
                                                                 return 1;

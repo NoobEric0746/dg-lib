@@ -138,7 +138,7 @@ public final class DgLibApi implements IDgLibApi {
     }
 
     @Override
-    public boolean control(int channel, int strength, String pulseId, double seconds) {
+    public boolean control(int channel, int strength, String pulseId, int seconds) {
         Pulse pulse = PulseRegistry.get(pulseId);
         if (pulse == null) {
             return false;
@@ -152,7 +152,7 @@ public final class DgLibApi implements IDgLibApi {
     }
 
     @Override
-    public boolean controlSoft(int channel, int softStrength, String pulseId, double seconds) {
+    public boolean controlSoft(int channel, int softStrength, String pulseId, int seconds) {
         if (channel == 3) {
             Pulse pulse = PulseRegistry.get(pulseId);
             if (pulse == null) {

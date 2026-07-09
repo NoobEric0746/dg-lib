@@ -19,7 +19,7 @@ public final class CoyoteClientApi {
         return DgLibApi.get().setStrength(channel, value);
     }
 
-    public static boolean control(int channel, int strength, String pulseId, double seconds) {
+    public static boolean control(int channel, int strength, String pulseId, int seconds) {
         return DgLibApi.get().control(channel, strength, pulseId, seconds);
     }
 

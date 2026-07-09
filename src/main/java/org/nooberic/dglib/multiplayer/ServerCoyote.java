@@ -52,16 +52,16 @@ public class ServerCoyote {
         return api.sendAndMapSuccess(playerId, org.nooberic.dglib.network.DgClientOperation.PLAY_PULSE_BY_ID, seconds, pulseId);
     }
 
-    public CompletableFuture<Boolean> control(int channel, int strength, String pulseId, double seconds) {
+    public CompletableFuture<Boolean> control(int channel, int strength, String pulseId, int seconds) {
         String payload = strength + "|" + pulseId;
-        int encodedTenths = (int) Math.max(1L, Math.min(600L, Math.round(seconds * 10.0D)));
-        return api.sendAndMapSuccess(playerId, org.nooberic.dglib.network.DgClientOperation.CONTROL, channel, encodedTenths, payload);
+        int safeSeconds = Math.max(1, Math.min(60, seconds));
+        return api.sendAndMapSuccess(playerId, org.nooberic.dglib.network.DgClientOperation.CONTROL, channel, safeSeconds, payload);
     }
 
-    public CompletableFuture<Boolean> controlSoft(int channel, int softStrength, String pulseId, double seconds) {
+    public CompletableFuture<Boolean> controlSoft(int channel, int softStrength, String pulseId, int seconds) {
         String payload = softStrength + "|" + pulseId;
-        int encodedTenths = (int) Math.max(1L, Math.min(600L, Math.round(seconds * 10.0D)));
-        return api.sendAndMapSuccess(playerId, org.nooberic.dglib.network.DgClientOperation.CONTROL_SOFT, channel, encodedTenths, payload);
+        int safeSeconds = Math.max(1, Math.min(60, seconds));
+        return api.sendAndMapSuccess(playerId, org.nooberic.dglib.network.DgClientOperation.CONTROL_SOFT, channel, safeSeconds, payload);
     }
 
     public CompletableFuture<Integer> getCurrentStrength(int channel) {

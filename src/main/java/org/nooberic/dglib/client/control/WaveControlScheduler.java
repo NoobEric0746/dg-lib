@@ -3,9 +3,7 @@ package org.nooberic.dglib.client.control;
 import org.nooberic.dglib.pulse.Pulse;
 import org.nooberic.dglib.service.DgLabService;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
@@ -14,9 +12,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 public final class WaveControlScheduler {
-    private static final double MIN_SECONDS = 0.1D;
-    private static final double MAX_SECONDS = 60D;
-    private static final long MIN_DURATION_MILLIS = 100L;
+    private static final int MIN_SECONDS = 1;
+    private static final int MAX_SECONDS = 60;
     private static final long FINISH_BUFFER_MILLIS = 150L;
 
     private final DgLabService service;
@@ -31,20 +28,20 @@ public final class WaveControlScheduler {
         this.executor = Executors.newSingleThreadScheduledExecutor();
     }
 
-    public synchronized boolean schedule(int channel, int strength, Pulse pulse, double seconds) {
+    public synchronized boolean schedule(int channel, int strength, Pulse pulse, int seconds) {
         if (pulse == null) {
             return false;
         }
         ensureExecutor();
 
         int normalizedChannel = channel == 2 ? 2 : 1;
-        double safeSeconds = clampSeconds(seconds);
+        int safeSeconds = clampSeconds(seconds);
         long durationMillis = secondsToMillis(safeSeconds);
         long sequence = sequenceGenerator.incrementAndGet();
         WaveEvent event = new WaveEvent(
                 normalizedChannel,
                 strength,
-                rebuildPulse(pulse, normalizedChannel, millisToWireSeconds(durationMillis)),
+                rebuildPulse(pulse, normalizedChannel, safeSeconds),
                 durationMillis,
                 sequence
         );
@@ -54,12 +51,11 @@ public final class WaveControlScheduler {
             return startEvent(state, event);
         }
 
-        if (comparePriority(event, state.activeEvent) < 0) {
-            pauseActiveEvent(state);
+        if (event.strength >= state.activeEvent.strength) {
+            stopActiveEvent(state);
             return startEvent(state, event);
         }
 
-        state.waitingEvents.add(event);
         return true;
     }
 
@@ -92,13 +88,6 @@ public final class WaveControlScheduler {
         );
     }
 
-    private int comparePriority(WaveEvent left, WaveEvent right) {
-        if (left.strength != right.strength) {
-            return Integer.compare(right.strength, left.strength);
-        }
-        return Long.compare(right.sequence, left.sequence);
-    }
-
     private boolean startEvent(ChannelState state, WaveEvent event) {
         if (!service.control(event.channel, event.strength, event.pulse)) {
             return false;
@@ -121,19 +110,11 @@ public final class WaveControlScheduler {
         return true;
     }
 
-    private void pauseActiveEvent(ChannelState state) {
+    private void stopActiveEvent(ChannelState state) {
         WaveEvent active = state.activeEvent;
         if (active == null) {
             return;
         }
-        long now = System.currentTimeMillis();
-        long elapsedMillis = Math.max(0L, now - active.startedAtMillis);
-        long remainingMillis = Math.max(MIN_DURATION_MILLIS, active.remainingMillis - elapsedMillis);
-        active.remainingMillis = remainingMillis;
-        active.startedAtMillis = 0L;
-        service.clearScheduledControlState(active.channel);
-        service.hardClear(active.channel);
-        state.waitingEvents.add(active);
         state.activeEvent = null;
         state.generation++;
     }
@@ -145,31 +126,13 @@ public final class WaveControlScheduler {
         }
 
         state.activeEvent = null;
-        WaveEvent next = pollNextEvent(state);
-        if (next != null) {
-            startEvent(state, next);
-            return;
-        }
-
         service.clearScheduledControlState(channel);
         service.setStrength(channel, 0);
         service.hardClear(channel);
     }
 
-    private WaveEvent pollNextEvent(ChannelState state) {
-        if (state.waitingEvents.isEmpty()) {
-            return null;
-        }
-        List<WaveEvent> candidates = new ArrayList<>(state.waitingEvents);
-        candidates.sort(this::comparePriority);
-        WaveEvent next = candidates.get(0);
-        state.waitingEvents.remove(next);
-        return next;
-    }
-
     private void clearChannel(int channel) {
         ChannelState state = channelStates.computeIfAbsent(channel, ignored -> new ChannelState());
-        state.waitingEvents.clear();
         state.activeEvent = null;
         state.generation++;
         service.clearScheduledControlState(channel);
@@ -182,24 +145,20 @@ public final class WaveControlScheduler {
         }
     }
 
-    private double clampSeconds(double seconds) {
-        if (Double.isNaN(seconds) || Double.isInfinite(seconds)) {
-            return MIN_SECONDS;
-        }
+    private int clampSeconds(int seconds) {
         return Math.max(MIN_SECONDS, Math.min(MAX_SECONDS, seconds));
     }
 
-    private long secondsToMillis(double seconds) {
-        return Math.max(MIN_DURATION_MILLIS, Math.round(clampSeconds(seconds) * 1_000D));
+    private long secondsToMillis(int seconds) {
+        return (long) clampSeconds(seconds) * 1_000L;
     }
 
     private int millisToWireSeconds(long durationMillis) {
-        long clampedMillis = Math.max(MIN_DURATION_MILLIS, durationMillis);
-        return (int) Math.max(1L, Math.min(60L, (clampedMillis + 999L) / 1_000L));
+        long clampedMillis = Math.max(secondsToMillis(MIN_SECONDS), durationMillis);
+        return (int) Math.max(MIN_SECONDS, Math.min(MAX_SECONDS, (clampedMillis + 999L) / 1_000L));
     }
 
     private static final class ChannelState {
-        private final List<WaveEvent> waitingEvents = new ArrayList<>();
         private WaveEvent activeEvent;
         private long generation;
     }
