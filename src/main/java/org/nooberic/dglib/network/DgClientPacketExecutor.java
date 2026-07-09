@@ -50,15 +50,7 @@ public final class DgClientPacketExecutor {
                         error = "pulse-id-not-registered:" + payload;
                         success = false;
                     } else {
-                        Pulse runtimePulse = value > 0
-                                ? new Pulse(
-                                pulse.getName(),
-                                pulse.getChannel(),
-                                value,
-                            pulse.getFrames()
-                        )
-                                : pulse;
-                        success = DgLibApi.get().playPulse(runtimePulse);
+                        success = DgLibApi.get().playPulse(channel, pulse, value);
                     }
                     break;
                 case CONTROL:

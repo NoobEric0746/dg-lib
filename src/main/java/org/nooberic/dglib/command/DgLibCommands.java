@@ -299,35 +299,31 @@ public final class DgLibCommands {
                                                                 }
                                                             }))))))
                 .then(Commands.literal("wave")
+                    .then(Commands.argument("channel", IntegerArgumentType.integer(1, 3))
                         .then(Commands.argument("pulse_id", StringArgumentType.word())
-                                .suggests(PULSE_ID_SUGGESTIONS)
-                                .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 60))
-                                .executes(ctx -> {
-                                    String pulseId = StringArgumentType.getString(ctx, "pulse_id");
-                                    int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
-                                    Pulse pulse = DgLibApi.get().getPulse(pulseId);
-                                    if (pulse == null) {
-                                        ctx.getSource().sendFailure(Component.literal("§c[DG Lib] Unknown pulse id: " + pulseId));
-                                        ctx.getSource().sendSuccess(
-                                                () -> Component.literal("§7Registered: " + String.join(", ", DgLibApi.get().getAllPulses().keySet())),
-                                                false
-                                        );
-                                        return 0;
-                                    }
+                            .suggests(PULSE_ID_SUGGESTIONS)
+                            .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 60))
+                            .executes(ctx -> {
+                                int channel = IntegerArgumentType.getInteger(ctx, "channel");
+                                String pulseId = StringArgumentType.getString(ctx, "pulse_id");
+                                int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
+                                Pulse pulse = DgLibApi.get().getPulse(pulseId);
+                                if (pulse == null) {
+                                ctx.getSource().sendFailure(Component.literal("§c[DG Lib] Unknown pulse id: " + pulseId));
+                                ctx.getSource().sendSuccess(
+                                    () -> Component.literal("§7Registered: " + String.join(", ", DgLibApi.get().getAllPulses().keySet())),
+                                    false
+                                );
+                                return 0;
+                                }
 
-                                        Pulse runtimePulse = new Pulse(
-                                            pulse.getName(),
-                                            pulse.getChannel(),
-                                            seconds,
-                                            pulse.getFrames()
-                                        );
-                                        boolean ok = DgLibApi.get().playPulse(runtimePulse);
-                                    String msg = ok
-                                            ? String.format("§2[DG Lib]§r Pulse '%s' triggered for %ds.", pulseId, seconds)
-                                            : "§c[DG Lib] Not paired or unavailable.";
-                                    ctx.getSource().sendSuccess(() -> Component.literal(msg), false);
-                                    return ok ? 1 : 0;
-                                    }))))
+                                boolean ok = DgLibApi.get().playPulse(channel, pulse, seconds);
+                                String msg = ok
+                                    ? String.format("§2[DG Lib]§r Pulse '%s' triggered on Ch%s for %ds.", pulseId, channel == 3 ? "1+2" : String.valueOf(channel), seconds)
+                                    : "§c[DG Lib] Not paired or unavailable.";
+                                ctx.getSource().sendSuccess(() -> Component.literal(msg), false);
+                                return ok ? 1 : 0;
+                                })))))
         );
 
         dispatcher.register(Commands.literal("dg_server")
@@ -498,24 +494,26 @@ public final class DgLibCommands {
                                                             })))))))
                 .then(Commands.literal("wave")
                         .then(Commands.argument("player", EntityArgument.player())
-                                .then(Commands.argument("pulse_id", StringArgumentType.word())
-                            .suggests(PULSE_ID_SUGGESTIONS)
-                            .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 60))
-                                        .executes(ctx -> {
-                                            ServerPlayer target = EntityArgument.getPlayer(ctx, "player");
-                                            String pulseId = StringArgumentType.getString(ctx, "pulse_id");
-                                int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
+                                .then(Commands.argument("channel", IntegerArgumentType.integer(1, 3))
+                                        .then(Commands.argument("pulse_id", StringArgumentType.word())
+                                    .suggests(PULSE_ID_SUGGESTIONS)
+                                    .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 60))
+                                                .executes(ctx -> {
+                                                    ServerPlayer target = EntityArgument.getPlayer(ctx, "player");
+                                                    int channel = IntegerArgumentType.getInteger(ctx, "channel");
+                                                    String pulseId = StringArgumentType.getString(ctx, "pulse_id");
+                                        int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
 
-                                            ServerCoyote coyote = DgServerCoyoteApi.get().getCoyote(target);
-                                            handleServerFuture(
-                                                    ctx.getSource(),
-                                    coyote.playPulseById(pulseId, seconds),
-                                                    ok -> ok
-                                        ? String.format("§2[DG Server]§r Pulse '%s' sent to %s for %ds.", pulseId, target.getGameProfile().getName(), seconds)
-                                                            : String.format("§c[DG Server] %s pulse '%s' rejected (not paired / id not found / unavailable).", target.getGameProfile().getName(), pulseId)
-                                            );
-                                            return 1;
-                            })))))
+                                                    ServerCoyote coyote = DgServerCoyoteApi.get().getCoyote(target);
+                                                    handleServerFuture(
+                                                            ctx.getSource(),
+                                            coyote.playPulseById(channel, pulseId, seconds),
+                                                            ok -> ok
+                                                ? String.format("§2[DG Server]§r Pulse '%s' sent to %s on Ch%s for %ds.", pulseId, target.getGameProfile().getName(), channel == 3 ? "1+2" : String.valueOf(channel), seconds)
+                                                                    : String.format("§c[DG Server] %s pulse '%s' rejected (not paired / id not found / unavailable).", target.getGameProfile().getName(), pulseId)
+                                                    );
+                                                    return 1;
+                                    }))))))
         );
     }
 }

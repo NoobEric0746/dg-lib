@@ -180,6 +180,25 @@ public final class DgLibApi implements IDgLibApi {
         return service.playPulse(pulse);
     }
 
+    public boolean playPulse(int channel, Pulse pulse, int seconds) {
+        if (pulse == null) {
+            return false;
+        }
+        int safeSeconds = Math.max(1, Math.min(60, seconds));
+        if (channel == 3) {
+            boolean channelAOk = playPulse(1, pulse, safeSeconds);
+            boolean channelBOk = playPulse(2, pulse, safeSeconds);
+            return channelAOk && channelBOk;
+        }
+        Pulse runtimePulse = new Pulse(
+            pulse.getName(),
+            channel == 2 ? Pulse.Channel.B : Pulse.Channel.A,
+            safeSeconds,
+            pulse.getFrames()
+        );
+        return playPulse(runtimePulse);
+    }
+
     @Override
     public boolean registerPulse(String id, String pulseFileName) {
         return PulseRegistry.registerFromResource(id, pulseFileName);

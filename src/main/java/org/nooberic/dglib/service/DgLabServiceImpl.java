@@ -104,6 +104,7 @@ public class DgLabServiceImpl implements DgLabService {
         transportClient.close();
         reconnectScheduler.shutdownNow();
         controlScheduler.shutdownNow();
+        ClientPairingNotifier.reset();
         channelAStrength = 0;
         channelBStrength = 0;
         state = ConnectionState.DISCONNECTED;
@@ -119,6 +120,7 @@ public class DgLabServiceImpl implements DgLabService {
             return;
         }
 
+        ClientPairingNotifier.reset();
         manualDisconnect.set(false);
         state = ConnectionState.CONNECTING;
 
@@ -152,6 +154,7 @@ public class DgLabServiceImpl implements DgLabService {
         manualDisconnect.set(true);
         transportClient.close();
         state = ConnectionState.DISCONNECTED;
+        ClientPairingNotifier.reset();
         channelAStrength = 0;
         channelBStrength = 0;
         generatedWsUrl = ""; // 清空 wsUrl，下次 connect 时会生成新的
