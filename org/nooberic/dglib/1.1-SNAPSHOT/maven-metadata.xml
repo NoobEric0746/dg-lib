@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata modelVersion="1.1.0">
+  <groupId>org.nooberic</groupId>
+  <artifactId>dglib</artifactId>
+  <versioning>
+    <lastUpdated>20260709100802</lastUpdated>
+    <snapshot>
+      <timestamp>20260709.100802</timestamp>
+      <buildNumber>1</buildNumber>
+    </snapshot>
+    <snapshotVersions>
+      <snapshotVersion>
+        <extension>jar</extension>
+        <value>1.1-20260709.100802-1</value>
+        <updated>20260709100802</updated>
+      </snapshotVersion>
+      <snapshotVersion>
+        <extension>pom</extension>
+        <value>1.1-20260709.100802-1</value>
+        <updated>20260709100802</updated>
+      </snapshotVersion>
+      <snapshotVersion>
+        <classifier>sources</classifier>
+        <extension>jar</extension>
+        <value>1.1-20260709.100802-1</value>
+        <updated>20260709100802</updated>
+      </snapshotVersion>
+    </snapshotVersions>
+  </versioning>
+  <version>1.1-SNAPSHOT</version>
+</metadata>

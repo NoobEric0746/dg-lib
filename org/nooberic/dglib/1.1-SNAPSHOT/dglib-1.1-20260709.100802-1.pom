@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.nooberic</groupId>
   <artifactId>dglib</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>1.1-SNAPSHOT</version>
   <name>DG Lib</name>
   <description>DG-LAB è®¾å¤æ§å¶åºï¼æä¾ WebSocket è¿æ¥ãè®¾å¤éå¯¹ãå¼ºåº¦æ§å¶ãæ³¢å½¢è°åº¦ä¸æ¸¸æå UI æ¯æã</description>
   <url>https://github.com/NoobEric0746/dg-lib</url>
