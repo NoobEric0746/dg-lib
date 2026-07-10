@@ -2,7 +2,7 @@ package org.nooberic.dglib.network;
 
 import com.mojang.logging.LogUtils;
 import org.nooberic.dglib.api.DgLibApi;
-import org.nooberic.dglib.pulse.Pulse;
+import org.nooberic.dglib.pulse.RegisteredPulse;
 import org.nooberic.dglib.service.DeviceStatus;
 import org.slf4j.Logger;
 
@@ -45,7 +45,7 @@ public final class DgClientPacketExecutor {
                     success = DgLibApi.get().playBasicWave(channel, value);
                     break;
                 case PLAY_PULSE_BY_ID:
-                    Pulse pulse = DgLibApi.get().getPulse(payload);
+                        RegisteredPulse pulse = DgLibApi.get().getPulse(payload);
                     if (pulse == null) {
                         error = "pulse-id-not-registered:" + payload;
                         success = false;

@@ -11,10 +11,12 @@ import org.nooberic.dglib.coyote.connection.WsTransportClient;
 import org.nooberic.dglib.coyote.protocol.DgProtocolCodec;
 import org.nooberic.dglib.coyote.protocol.DgSocketMessage;
 import org.nooberic.dglib.pulse.Pulse;
+import org.nooberic.dglib.pulse.RegisteredPulse;
 import org.nooberic.dglib.util.QrCodeGenerator;
 import org.slf4j.Logger;
 
 import java.net.URI;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -24,9 +26,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class DgLabServiceImpl implements DgLabService {
     private static final Logger LOGGER = LogUtils.getLogger();
-    private static final String[] CLEAR_COVER_WAVE_V3 = new String[]{
-            "0A0A0A0A00000000"
-    };
+        private static final List<String> CLEAR_COVER_WAVE_V3 = List.of(
+            "0000000000000000"
+        );
     private static final String[] BASIC_WAVE_V3 = new String[]{
             "0A0A0A0A00000000",
             "0A0A0A0A14141414",
@@ -293,8 +295,8 @@ public class DgLabServiceImpl implements DgLabService {
         }
 
         if (channel == 3) {
-            Pulse pulseA = new Pulse(pulse.getName(), Pulse.Channel.A, pulse.getSeconds(), pulse.getFrames());
-            Pulse pulseB = new Pulse(pulse.getName(), Pulse.Channel.B, pulse.getSeconds(), pulse.getFrames());
+            Pulse pulseA = new Pulse(Pulse.Channel.A, pulse.getSeconds(), pulse.getFrames());
+            Pulse pulseB = new Pulse(Pulse.Channel.B, pulse.getSeconds(), pulse.getFrames());
             boolean channelAOk = control(1, strength, pulseA);
             boolean channelBOk = control(2, strength, pulseB);
             return channelAOk && channelBOk;
@@ -302,11 +304,12 @@ public class DgLabServiceImpl implements DgLabService {
 
         int normalizedChannel = normalizeChannel(channel);
         int safeStrength = clampToSafetyLimit(normalizedChannel, strength);
+        Pulse runtimePulse = new Pulse(normalizedChannel == 2 ? Pulse.Channel.B : Pulse.Channel.A, pulse.getSeconds(), pulse.getFrames());
 
         if (!setStrength(normalizedChannel, safeStrength)) {
             return false;
         }
-        if (!playPulse(pulse)) {
+        if (!playPulse(runtimePulse)) {
             // Roll back immediately when pulse queueing fails, avoiding stuck non-zero strength.
             setStrength(normalizedChannel, 0);
             return false;
@@ -330,18 +333,15 @@ public class DgLabServiceImpl implements DgLabService {
         }
 
         int normalizedChannel = normalizeChannel(channel);
-        Pulse coverPulse = new Pulse(
-                "clear_cover",
-                normalizedChannel == 2 ? Pulse.Channel.B : Pulse.Channel.A,
-                1,
-                java.util.List.of(CLEAR_COVER_WAVE_V3)
-        );
-
-        boolean cleared = clearWave(normalizedChannel);
-        boolean covered = playPulse(coverPulse);
+    Pulse coverPulse = new Pulse(
+        normalizedChannel == 2 ? Pulse.Channel.B : Pulse.Channel.A,
+        1,
+        CLEAR_COVER_WAVE_V3
+    );
+    boolean covered = playPulse(coverPulse);
         boolean zeroed = setStrength(normalizedChannel, 0);
-        LOGGER.info("DG-LAB hard clear executed: channel={}, cleared={}, covered={}, zeroed={}", normalizedChannel, cleared, covered, zeroed);
-        return cleared && covered && zeroed;
+    LOGGER.info("DG-LAB hard clear executed: channel={}, covered={}, zeroed={}", normalizedChannel, covered, zeroed);
+    return covered && zeroed;
     }
 
     @Override
@@ -386,8 +386,8 @@ public class DgLabServiceImpl implements DgLabService {
         try {
             String payload = DgProtocolCodec.encodePulseMessage(clientId, targetId, pulse);
             transportClient.sendText(payload);
-            LOGGER.info("DG-LAB custom pulse queued: name={}, channel={}, seconds={}, frames={}",
-                    pulse.getName(), pulse.getChannel(), pulse.getSeconds(), pulse.getFrames().size());
+                LOGGER.info("DG-LAB custom pulse queued: channel={}, seconds={}, frames={}",
+                    pulse.getChannel(), pulse.getSeconds(), pulse.getFrames().size());
             return true;
         } catch (Exception ex) {
             LOGGER.warn("DG-LAB failed to queue custom pulse", ex);

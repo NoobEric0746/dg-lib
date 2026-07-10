@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class PulseRegistry {
     private static final Logger LOGGER = LogUtils.getLogger();
-    private static final Map<String, Pulse> REGISTRY = new ConcurrentHashMap<>();
+    private static final Map<String, RegisteredPulse> REGISTRY = new ConcurrentHashMap<>();
 
     private PulseRegistry() {
     }
@@ -32,7 +32,7 @@ public final class PulseRegistry {
                 return false;
             }
             String content = new String(in.readAllBytes(), StandardCharsets.UTF_8);
-            Pulse pulse = PulseFileParser.parse(content);
+            RegisteredPulse pulse = PulseFileParser.parse(content, key);
             REGISTRY.put(key, pulse);
             LOGGER.info("Pulse registered: id={}, file={}", key, resourceName);
             return true;
@@ -42,7 +42,7 @@ public final class PulseRegistry {
         }
     }
 
-    public static void register(String id, Pulse pulse) {
+    public static void register(String id, RegisteredPulse pulse) {
         String key = normalizeId(id);
         if (key.isEmpty()) {
             throw new IllegalArgumentException("Pulse id cannot be empty");
@@ -54,7 +54,7 @@ public final class PulseRegistry {
         REGISTRY.put(key, pulse);
     }
 
-    public static Pulse get(String id) {
+    public static RegisteredPulse get(String id) {
         return REGISTRY.get(normalizeId(id));
     }
 
@@ -62,7 +62,7 @@ public final class PulseRegistry {
         return REGISTRY.containsKey(normalizeId(id));
     }
 
-    public static Map<String, Pulse> all() {
+    public static Map<String, RegisteredPulse> all() {
         return Collections.unmodifiableMap(REGISTRY);
     }
 

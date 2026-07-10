@@ -4,6 +4,7 @@ import net.minecraft.server.level.ServerPlayer;
 import org.nooberic.dglib.client.control.WaveControlScheduler;
 import org.nooberic.dglib.pulse.Pulse;
 import org.nooberic.dglib.pulse.PulseRegistry;
+import org.nooberic.dglib.pulse.RegisteredPulse;
 import org.nooberic.dglib.service.ConnectionState;
 import org.nooberic.dglib.service.DeviceStatus;
 import org.nooberic.dglib.service.DgLabService;
@@ -134,12 +135,12 @@ public final class DgLibApi implements IDgLibApi {
     @Override
     public boolean clear(int channel) {
         scheduler.clear(channel);
-        return service.hardClear(channel);
+        return true;
     }
 
     @Override
     public boolean control(int channel, int strength, String pulseId, int seconds) {
-        Pulse pulse = PulseRegistry.get(pulseId);
+        RegisteredPulse pulse = PulseRegistry.get(pulseId);
         if (pulse == null) {
             return false;
         }
@@ -154,7 +155,7 @@ public final class DgLibApi implements IDgLibApi {
     @Override
     public boolean controlSoft(int channel, int softStrength, String pulseId, int seconds) {
         if (channel == 3) {
-            Pulse pulse = PulseRegistry.get(pulseId);
+            RegisteredPulse pulse = PulseRegistry.get(pulseId);
             if (pulse == null) {
                 return false;
             }
@@ -180,7 +181,7 @@ public final class DgLibApi implements IDgLibApi {
         return service.playPulse(pulse);
     }
 
-    public boolean playPulse(int channel, Pulse pulse, int seconds) {
+    public boolean playPulse(int channel, RegisteredPulse pulse, int seconds) {
         if (pulse == null) {
             return false;
         }
@@ -191,7 +192,6 @@ public final class DgLibApi implements IDgLibApi {
             return channelAOk && channelBOk;
         }
         Pulse runtimePulse = new Pulse(
-            pulse.getName(),
             channel == 2 ? Pulse.Channel.B : Pulse.Channel.A,
             safeSeconds,
             pulse.getFrames()
@@ -215,12 +215,12 @@ public final class DgLibApi implements IDgLibApi {
     }
 
     @Override
-    public Pulse getPulse(String id) {
+    public RegisteredPulse getPulse(String id) {
         return PulseRegistry.get(id);
     }
 
     @Override
-    public Map<String, Pulse> getAllPulses() {
+    public Map<String, RegisteredPulse> getAllPulses() {
         return PulseRegistry.all();
     }
 }

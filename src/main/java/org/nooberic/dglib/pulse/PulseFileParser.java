@@ -16,22 +16,22 @@ public final class PulseFileParser {
     private PulseFileParser() {
     }
 
-    public static Pulse parse(Path path) throws IOException {
+    public static RegisteredPulse parse(Path path, String id) throws IOException {
         if (path == null) {
             throw new IllegalArgumentException("Path cannot be null");
         }
         String text = Files.readString(path, StandardCharsets.UTF_8);
-        return parse(text);
+        return parse(text, id);
     }
 
-    public static Pulse parse(String content) {
+    public static RegisteredPulse parse(String content, String id) {
         if (content == null || content.trim().isEmpty()) {
             throw new IllegalArgumentException("Pulse file content is empty");
         }
-        return parseFrameJson(content.trim());
+        return parseFrameJson(content.trim(), id);
     }
 
-    private static Pulse parseFrameJson(String jsonText) {
+    private static RegisteredPulse parseFrameJson(String jsonText, String id) {
         JsonElement root = JsonParser.parseString(jsonText);
         JsonArray framesArray;
 
@@ -51,7 +51,7 @@ public final class PulseFileParser {
             frames.add(element.getAsString());
         }
 
-        Pulse pulse = new Pulse("", Pulse.Channel.A, 1, frames);
+        RegisteredPulse pulse = new RegisteredPulse(id, frames);
         pulse.validate();
         return pulse;
     }

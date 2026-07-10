@@ -11,7 +11,7 @@ import net.minecraft.network.chat.Component;
 import org.nooberic.dglib.api.DgLibApi;
 import org.nooberic.dglib.client.screen.QrCodeScreen;
 import org.nooberic.dglib.client.screen.StrengthControlScreen;
-import org.nooberic.dglib.pulse.Pulse;
+import org.nooberic.dglib.pulse.RegisteredPulse;
 import org.nooberic.dglib.service.DeviceStatus;
 
 public final class DgClientCommands {
@@ -275,7 +275,7 @@ public final class DgClientCommands {
                                                     int channel = IntegerArgumentType.getInteger(ctx, "channel");
                                                     String pulseId = StringArgumentType.getString(ctx, "pulse_id");
                                                     int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
-                                                    Pulse pulse = DgLibApi.get().getPulse(pulseId);
+                                                    RegisteredPulse pulse = DgLibApi.get().getPulse(pulseId);
                                                     if (pulse == null) {
                                                         sendError(ctx.getSource(), "§c[DG Lib] Unknown pulse id: " + pulseId);
                                                         sendFeedback(ctx.getSource(), "§7Registered: " + String.join(", ", DgLibApi.get().getAllPulses().keySet()));

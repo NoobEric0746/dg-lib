@@ -4,35 +4,17 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public final class Pulse {
-    public enum Channel {
-        A,
-        B;
-
-        public static Channel from(String text) {
-            if (text == null) {
-                return A;
-            }
-            return "B".equalsIgnoreCase(text.trim()) ? B : A;
-        }
-    }
-
-    private final Channel channel;
-    private final int seconds;
+public final class RegisteredPulse {
+    private final String id;
     private final List<String> frames;
 
-    public Pulse(Channel channel, int seconds, List<String> frames) {
-        this.channel = channel == null ? Channel.A : channel;
-        this.seconds = Math.max(1, Math.min(60, seconds));
+    public RegisteredPulse(String id, List<String> frames) {
+        this.id = id == null ? "" : id;
         this.frames = Collections.unmodifiableList(new ArrayList<>(frames == null ? List.of() : frames));
     }
 
-    public Channel getChannel() {
-        return channel;
-    }
-
-    public int getSeconds() {
-        return seconds;
+    public String getId() {
+        return id;
     }
 
     public List<String> getFrames() {
@@ -44,6 +26,9 @@ public final class Pulse {
     }
 
     public void validate() {
+        if (id.trim().isEmpty()) {
+            throw new IllegalArgumentException("Pulse id cannot be empty");
+        }
         if (frames.isEmpty()) {
             throw new IllegalArgumentException("Pulse frames cannot be empty");
         }

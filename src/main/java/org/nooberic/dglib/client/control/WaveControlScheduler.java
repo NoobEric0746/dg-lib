@@ -1,6 +1,7 @@
 package org.nooberic.dglib.client.control;
 
 import org.nooberic.dglib.pulse.Pulse;
+import org.nooberic.dglib.pulse.RegisteredPulse;
 import org.nooberic.dglib.service.DgLabService;
 
 import java.util.HashMap;
@@ -28,7 +29,7 @@ public final class WaveControlScheduler {
         this.executor = Executors.newSingleThreadScheduledExecutor();
     }
 
-    public synchronized boolean schedule(int channel, int strength, Pulse pulse, int seconds) {
+    public synchronized boolean schedule(int channel, int strength, RegisteredPulse pulse, int seconds) {
         if (pulse == null) {
             return false;
         }
@@ -81,7 +82,14 @@ public final class WaveControlScheduler {
 
     private Pulse rebuildPulse(Pulse pulse, int channel, int seconds) {
         return new Pulse(
-                pulse.getName(),
+                channel == 2 ? Pulse.Channel.B : Pulse.Channel.A,
+                seconds,
+                pulse.getFrames()
+        );
+    }
+
+    private Pulse rebuildPulse(RegisteredPulse pulse, int channel, int seconds) {
+        return new Pulse(
                 channel == 2 ? Pulse.Channel.B : Pulse.Channel.A,
                 seconds,
                 pulse.getFrames()
@@ -126,8 +134,18 @@ public final class WaveControlScheduler {
         }
 
         state.activeEvent = null;
+        state.generation++;
+        executor.execute(() -> clearFinishedChannel(channel, generation + 1));
+    }
+
+    private void clearFinishedChannel(int channel, long generation) {
+        synchronized (this) {
+            ChannelState state = channelStates.get(channel);
+            if (state == null || state.generation != generation || state.activeEvent != null) {
+                return;
+            }
+        }
         service.clearScheduledControlState(channel);
-        service.setStrength(channel, 0);
         service.hardClear(channel);
     }
 

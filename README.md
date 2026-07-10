@@ -339,8 +339,9 @@ versionRange = "[1.0.0,2.0.0)"
 **调度说明**：
 - `control` 使用本地调度器管理波形播放，而不是简单的一次性直发。
 - 高优先级（更高强度）的任务会抢占低优先级任务。
-- 抢占结束后，低优先级任务会按剩余时长恢复。
-- `channel=3` 会拆成通道 A / B 两条独立调度任务，各自独立抢占和恢复。
+- 被抢占的旧任务不会恢复，当前实现只保留最新生效任务。
+- `channel=3` 会拆成通道 A / B 两条独立调度任务，各自独立抢占和结束，互不影响。
+- 调度执行时会按 `control` 传入的目标通道重建运行时波形，不会沿用已注册波形对象里原始的通道字段。
 
 **返回**：
 - 成功：`[DG Lib] Control sent. Ch1 strength=80, pulse='basic_breath', 3.0s.`
@@ -526,6 +527,7 @@ boolean waveOk = api.playBasicWave(1, 5);
 说明：
 - `setStrength()`、`clear()`、`increaseStrength()`、`decreaseStrength()`、`playBasicWave()` / `playPulse()` 都是直接执行。
 - 只有 `control()` 会进入本地调度器。
+- 注册波形表中保存的是模板数据（`id + frames`）；真正下发到设备的执行波形会在运行时再附带 `channel + seconds`。
 
 #### 初始化和清理
 

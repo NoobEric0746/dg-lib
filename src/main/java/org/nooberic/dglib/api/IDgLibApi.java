@@ -2,6 +2,7 @@ package org.nooberic.dglib.api;
 
 import net.minecraft.server.level.ServerPlayer;
 import org.nooberic.dglib.pulse.Pulse;
+import org.nooberic.dglib.pulse.RegisteredPulse;
 import org.nooberic.dglib.service.ConnectionState;
 import org.nooberic.dglib.service.DeviceStatus;
 import org.nooberic.dglib.service.StrengthFeedbackListener;
@@ -61,7 +62,7 @@ public interface IDgLibApi {
 
     void spawnElectricityParticles(ServerPlayer player, int particleCount);
 
-    Pulse getPulse(String id);
+    RegisteredPulse getPulse(String id);
 
-    Map<String, Pulse> getAllPulses();
+    Map<String, RegisteredPulse> getAllPulses();
 }

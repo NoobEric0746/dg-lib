@@ -5,6 +5,7 @@ import org.nooberic.dglib.api.DgLibApi;
 import org.nooberic.dglib.multiplayer.CoyoteStatusSnapshot;
 import org.nooberic.dglib.multiplayer.DgServerCoyoteApi;
 import org.nooberic.dglib.pulse.Pulse;
+import org.nooberic.dglib.pulse.RegisteredPulse;
 import org.nooberic.dglib.service.ConnectionState;
 import org.nooberic.dglib.service.DeviceStatus;
 
@@ -32,6 +33,10 @@ public final class CoyoteClientApi {
 
     public static boolean playPulse(Pulse pulse) {
         return DgLibApi.get().playPulse(pulse);
+    }
+
+    public static boolean playPulse(int channel, RegisteredPulse pulse, int seconds) {
+        return DgLibApi.get().playPulse(channel, pulse, seconds);
     }
 
     public static ConnectionState getConnectionState() {
