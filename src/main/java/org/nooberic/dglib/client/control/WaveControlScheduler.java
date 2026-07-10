@@ -44,12 +44,17 @@ public final class WaveControlScheduler {
                 strength,
                 rebuildPulse(pulse, normalizedChannel, safeSeconds),
                 durationMillis,
-                sequence
+            sequence,
+            safeSeconds > MIN_SECONDS
         );
 
         ChannelState state = channelStates.computeIfAbsent(normalizedChannel, ignored -> new ChannelState());
         if (state.activeEvent == null) {
             return startEvent(state, event);
+        }
+
+        if (!state.activeEvent.interruptible) {
+            return true;
         }
 
         if (event.strength >= state.activeEvent.strength) {
@@ -185,16 +190,18 @@ public final class WaveControlScheduler {
         private final int channel;
         private final int strength;
         private final long sequence;
+        private final boolean interruptible;
         private Pulse pulse;
         private long remainingMillis;
         private long startedAtMillis;
 
-        private WaveEvent(int channel, int strength, Pulse pulse, long remainingMillis, long sequence) {
+        private WaveEvent(int channel, int strength, Pulse pulse, long remainingMillis, long sequence, boolean interruptible) {
             this.channel = channel;
             this.strength = strength;
             this.pulse = pulse;
             this.remainingMillis = remainingMillis;
             this.sequence = sequence;
+            this.interruptible = interruptible;
             this.startedAtMillis = 0L;
         }
     }

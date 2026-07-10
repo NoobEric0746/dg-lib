@@ -26,9 +26,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class DgLabServiceImpl implements DgLabService {
     private static final Logger LOGGER = LogUtils.getLogger();
-        private static final List<String> CLEAR_COVER_WAVE_V3 = List.of(
-            "0000000000000000"
-        );
+    private static final List<String> CLEAR_COVER_WAVE_V3 = List.of(
+        "0000000000000000"
+    );
     private static final String[] BASIC_WAVE_V3 = new String[]{
             "0A0A0A0A00000000",
             "0A0A0A0A14141414",
@@ -333,15 +333,15 @@ public class DgLabServiceImpl implements DgLabService {
         }
 
         int normalizedChannel = normalizeChannel(channel);
-    Pulse coverPulse = new Pulse(
-        normalizedChannel == 2 ? Pulse.Channel.B : Pulse.Channel.A,
-        1,
-        CLEAR_COVER_WAVE_V3
-    );
-    boolean covered = playPulse(coverPulse);
+        Pulse coverPulse = new Pulse(
+                normalizedChannel == 2 ? Pulse.Channel.B : Pulse.Channel.A,
+                2,
+                CLEAR_COVER_WAVE_V3
+        );
+        boolean covered = playPulse(coverPulse);
         boolean zeroed = setStrength(normalizedChannel, 0);
-    LOGGER.info("DG-LAB hard clear executed: channel={}, covered={}, zeroed={}", normalizedChannel, covered, zeroed);
-    return covered && zeroed;
+        LOGGER.info("DG-LAB hard clear executed: channel={}, covered={}, zeroed={}", normalizedChannel, covered, zeroed);
+        return covered && zeroed;
     }
 
     @Override
