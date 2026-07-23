@@ -1,7 +1,7 @@
 package org.nooberic.dglib.event;
 
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.nooberic.dglib.api.DgLibApi;
@@ -9,7 +9,7 @@ import org.nooberic.dglib.dglib;
 import org.slf4j.Logger;
 import com.mojang.logging.LogUtils;
 
-@Mod.EventBusSubscriber(modid = dglib.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = dglib.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class PulseRegistrationEvents {
     private static final Logger LOGGER = LogUtils.getLogger();
 
@@ -17,10 +17,17 @@ public final class PulseRegistrationEvents {
     }
 
     @SubscribeEvent
+    public static void onCommonSetup(FMLCommonSetupEvent event) {
+        event.enqueueWork(() -> {
+            registerBuiltInPulses();
+            LOGGER.info("DG Lib built-in pulses initialized");
+        });
+    }
+
+    @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
             DgLibApi.get().initialize();
-            registerBuiltInPulses();
             LOGGER.info("DG Lib client API initialized");
         });
     }
