@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.nooberic</groupId>
   <artifactId>dglib</artifactId>
-  <version>1.3.0</version>
+  <version>1.3.2</version>
   <name>DG Lib</name>
   <description>DG-LAB device control library, providing WebSocket connection, device pairing, strength control, waveform scheduling and game UI support.</description>
   <url>https://github.com/NoobEric0746/dg-lib</url>
