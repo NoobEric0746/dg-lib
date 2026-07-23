@@ -4,11 +4,22 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.AABB;
+import org.nooberic.dglib.Config;
 import org.nooberic.dglib.client.particle.DgParticleTypes;
+import org.nooberic.dglib.network.DgNetworking;
+import org.nooberic.dglib.network.DgS2CParticleShockSoundPacket;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public final class ElectricityParticleUtil {
     private static final int DEFAULT_PARTICLE_COUNT = 32;
     private static final double SURFACE_EPSILON = 0.02D;
+    private static final double FULL_VOLUME_RADIUS = 5.0D;
+    private static final double MAX_AUDIBLE_RADIUS = 8.0D;
+    private static final double MAX_AUDIBLE_RADIUS_SQUARED = MAX_AUDIBLE_RADIUS * MAX_AUDIBLE_RADIUS;
+    private static final Map<UUID, Long> LAST_SHOCK_SOUND_TICKS = new HashMap<>();
 
     private ElectricityParticleUtil() {
     }
@@ -38,6 +49,41 @@ public final class ElectricityParticleUtil {
                     0.0D,
                     0.0D,
                     0.0D
+            );
+        }
+
+        playShockSound(player);
+    }
+
+    private static void playShockSound(ServerPlayer target) {
+        if (!Config.particleShockSoundEnabled) {
+            return;
+        }
+
+        long gameTime = target.serverLevel().getGameTime();
+        UUID targetId = target.getUUID();
+        Long lastSoundTick = LAST_SHOCK_SOUND_TICKS.get(targetId);
+        if (lastSoundTick != null && gameTime - lastSoundTick < Config.particleShockSoundCooldownTicks) {
+            return;
+        }
+        LAST_SHOCK_SOUND_TICKS.put(targetId, gameTime);
+
+        for (ServerPlayer listener : target.serverLevel().players()) {
+            double distanceSquared = listener.distanceToSqr(target);
+            if (distanceSquared >= MAX_AUDIBLE_RADIUS_SQUARED) {
+                continue;
+            }
+
+            double distance = Math.sqrt(distanceSquared);
+            float volumeMultiplier = distance <= FULL_VOLUME_RADIUS
+                    ? 1.0F
+                    : (float) ((MAX_AUDIBLE_RADIUS - distance) / (MAX_AUDIBLE_RADIUS - FULL_VOLUME_RADIUS));
+            DgNetworking.sendToPlayer(
+                    listener,
+                    new DgS2CParticleShockSoundPacket(
+                            Config.particleShockSoundVolume * volumeMultiplier,
+                            Config.particleShockSoundPitch
+                    )
             );
         }
     }

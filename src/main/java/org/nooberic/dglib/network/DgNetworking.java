@@ -35,6 +35,12 @@ public final class DgNetworking {
                 .consumerMainThread(DgS2CClientOpRequestPacket::handle)
                 .add();
 
+        CHANNEL.messageBuilder(DgS2CParticleShockSoundPacket.class, index++, NetworkDirection.PLAY_TO_CLIENT)
+            .encoder(DgS2CParticleShockSoundPacket::encode)
+            .decoder(DgS2CParticleShockSoundPacket::decode)
+            .consumerMainThread(DgS2CParticleShockSoundPacket::handle)
+            .add();
+
         CHANNEL.messageBuilder(DgC2SClientOpResponsePacket.class, index, NetworkDirection.PLAY_TO_SERVER)
                 .encoder(DgC2SClientOpResponsePacket::encode)
                 .decoder(DgC2SClientOpResponsePacket::decode)

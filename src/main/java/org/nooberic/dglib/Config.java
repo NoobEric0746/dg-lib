@@ -57,6 +57,22 @@ public class Config {
         .comment("Top-left HUD display mode: 0=normal, 1=hidden, 2=hide current strength only")
         .defineInRange("hudDisplayMode", 0, 0, 2);
 
+    private static final ForgeConfigSpec.BooleanValue PARTICLE_SHOCK_SOUND_ENABLED = BUILDER
+        .comment("Play the electric shock sound when electricity particles are spawned")
+        .define("particleShockSoundEnabled", true);
+
+    private static final ForgeConfigSpec.DoubleValue PARTICLE_SHOCK_SOUND_VOLUME = BUILDER
+        .comment("Base volume for the particle shock sound")
+        .defineInRange("particleShockSoundVolume", 0.9D, 0.0D, 1.0D);
+
+    private static final ForgeConfigSpec.DoubleValue PARTICLE_SHOCK_SOUND_PITCH = BUILDER
+        .comment("Pitch for the particle shock sound")
+        .defineInRange("particleShockSoundPitch", 1.0D, 0.5D, 2.0D);
+
+    private static final ForgeConfigSpec.IntValue PARTICLE_SHOCK_SOUND_COOLDOWN_TICKS = BUILDER
+        .comment("Minimum ticks between particle shock sounds for the same target player")
+        .defineInRange("particleShockSoundCooldownTicks", 10, 0, 1200);
+
     static final ForgeConfigSpec SPEC = BUILDER.build();
 
     public static String wsUrl;
@@ -71,6 +87,10 @@ public class Config {
     public static int sensationFloorA;
     public static int sensationFloorB;
     public static int hudDisplayMode;
+    public static boolean particleShockSoundEnabled;
+    public static float particleShockSoundVolume;
+    public static float particleShockSoundPitch;
+    public static int particleShockSoundCooldownTicks;
 
     private static boolean validateChannel(final Object value) {
     if (!(value instanceof String channel)) {
@@ -94,6 +114,10 @@ public class Config {
     sensationFloorA = FLOOR_A.get();
     sensationFloorB = FLOOR_B.get();
     hudDisplayMode = HUD_DISPLAY_MODE.get();
+    particleShockSoundEnabled = PARTICLE_SHOCK_SOUND_ENABLED.get();
+    particleShockSoundVolume = PARTICLE_SHOCK_SOUND_VOLUME.get().floatValue();
+    particleShockSoundPitch = PARTICLE_SHOCK_SOUND_PITCH.get().floatValue();
+    particleShockSoundCooldownTicks = PARTICLE_SHOCK_SOUND_COOLDOWN_TICKS.get();
     }
 
     public static int getPainStrength(int channel) {
