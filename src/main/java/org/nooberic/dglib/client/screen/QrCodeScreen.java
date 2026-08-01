@@ -27,14 +27,12 @@ public class QrCodeScreen extends Screen {
     private static final int QR_CODE_SIZE = 300;
 
     private final String wsUrl;
-    private final String title;
     private DynamicTexture qrTexture;
     private ResourceLocation qrTextureLocation;
 
     public QrCodeScreen(String wsUrl) {
-        super(Component.literal("DG-LAB Pairing QR Code"));
+        super(Component.translatable("screen.dglib.qr_code.title"));
         this.wsUrl = wsUrl;
-        this.title = "DG-LAB Device Pairing";
     }
 
     @Override
@@ -74,7 +72,7 @@ public class QrCodeScreen extends Screen {
     public void render(GuiGraphics guiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
         this.renderBackground(guiGraphics);
 
-        guiGraphics.drawCenteredString(this.font, Component.literal(title), this.width / 2, 20, 0xFFFFFF);
+        guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 20, 0xFFFFFF);
 
         if (qrTextureLocation != null) {
             int drawSize = Math.min(Math.min(this.width - 60, this.height - 140), QR_CODE_SIZE);
@@ -84,14 +82,14 @@ public class QrCodeScreen extends Screen {
             guiGraphics.fill(qrX - 8, qrY - 8, qrX + drawSize + 8, qrY + drawSize + 8, 0xFFFFFFFF);
             guiGraphics.blit(qrTextureLocation, qrX, qrY, 0, 0, drawSize, drawSize, drawSize, drawSize);
 
-            guiGraphics.drawCenteredString(this.font, "Scan this QR code with DG-LAB app", this.width / 2, qrY + drawSize + 20, 0xAAAAAA);
-            guiGraphics.drawCenteredString(this.font, "or access the URL in your browser", this.width / 2, qrY + drawSize + 35, 0xAAAAAA);
+            guiGraphics.drawCenteredString(this.font, Component.translatable("screen.dglib.qr_code.scan_prompt"), this.width / 2, qrY + drawSize + 20, 0xAAAAAA);
+            guiGraphics.drawCenteredString(this.font, Component.translatable("screen.dglib.qr_code.browser_prompt"), this.width / 2, qrY + drawSize + 35, 0xAAAAAA);
             guiGraphics.drawCenteredString(this.font, "WebSocket: " + wsUrl, this.width / 2, qrY + drawSize + 55, 0x888888);
         } else {
             guiGraphics.drawCenteredString(this.font, "Generating QR code image...", this.width / 2, this.height / 2, 0xFFFFFF);
         }
 
-        guiGraphics.drawCenteredString(this.font, "Press ESC to close", this.width / 2, this.height - 30, 0x666666);
+        guiGraphics.drawCenteredString(this.font, "Press ESC to close", this.width / 2, this.height - 20, 0x666666);
 
         super.render(guiGraphics, pMouseX, pMouseY, pPartialTick);
     }
