@@ -7,15 +7,12 @@
 - Group ID：`org.nooberic`
 - Artifact ID：`dglib`
 - Mod ID：`dglib`
-- 当前版本：`1.0-SNAPSHOT`
+- 当前版本：`1.3.3`
 - 兼容版本：Minecraft `1.20.1` / Forge `47.4.20`
 
 ### 版本说明
 
-- 当前为开发版：`1.0-SNAPSHOT`
-- 发布时建议改成稳定语义化版本，例如 `1.0.0`
-
-完整发布流程见 [PUBLISHING.md](PUBLISHING.md)。
+- 当前版本为稳定版本：`1.3.3`
 
 ### 作为其他模组的依赖
 
@@ -36,8 +33,8 @@ repositories {
 }
 
 dependencies {
-    compileOnly fg.deobf("org.nooberic:dglib:1.0-SNAPSHOT")
-    runtimeOnly fg.deobf("org.nooberic:dglib:1.0-SNAPSHOT")
+    compileOnly fg.deobf("org.nooberic:dglib:1.3.3")
+    runtimeOnly fg.deobf("org.nooberic:dglib:1.3.3")
 }
 ```
 
@@ -47,14 +44,16 @@ dependencies {
 [[dependencies.yourmodid]]
 modId = "dglib"
 mandatory = true
-versionRange = "[1.0.0,)"
+versionRange = "[1.3.3,)"
 ordering = "AFTER"
 side = "BOTH"
 ```
 
 ### 运行时入口
 
-- `org.nooberic.dglib.api.DgLibApi`
+- 完整实例 API：`org.nooberic.dglib.api.DgLibApi`
+- 客户端静态 API：`org.nooberic.dglib.coyote.api.CoyoteClientApi`
+- 多人联机服务端 API：`org.nooberic.dglib.multiplayer.DgServerCoyoteApi`
 
 ### 已注册的内置波形
 
@@ -80,8 +79,8 @@ repositories {
 
 ```groovy
 dependencies {
-    compileOnly fg.deobf("org.nooberic:dglib:1.0-SNAPSHOT")
-    runtimeOnly fg.deobf("org.nooberic:dglib:1.0-SNAPSHOT")
+    compileOnly fg.deobf("org.nooberic:dglib:1.3.3")
+    runtimeOnly fg.deobf("org.nooberic:dglib:1.3.3")
 }
 ```
 
@@ -96,7 +95,7 @@ dependencies {
 [[dependencies.yourmodid]]
 modId = "dglib"
 mandatory = true
-versionRange = "[1.0.0,)"
+versionRange = "[1.3.3,)"
 ordering = "AFTER"
 side = "BOTH"
 ```
@@ -117,20 +116,16 @@ import org.nooberic.dglib.api.DgLibApi;
 
 然后根据你的需求调用 `DgLibApi` 提供的公开能力。
 
-#### 第五步：版本建议
+#### 第五步：版本
 
-当前仓库示例使用的是开发版：
+当前发布版本为：
 
-- `org.nooberic:dglib:1.0-SNAPSHOT`
+- `org.nooberic:dglib:1.3.3`
 
-如果后续发布稳定版，建议依赖正式版本号，例如：
-
-- `org.nooberic:dglib:1.0.0`
-
-对应地，依赖方的 `versionRange` 也建议写成更明确的范围，例如：
+对应地，依赖方的 `versionRange` 可以写成兼容当前版本的范围，例如：
 
 ```toml
-versionRange = "[1.0.0,2.0.0)"
+versionRange = "[1.3.3,2.0.0)"
 ```
 
 ## 功能特性
@@ -142,7 +137,7 @@ versionRange = "[1.0.0,2.0.0)"
 - ✅ 实时状态查询
 - ✅ 自动重连机制
 - ✅ 游戏内 GUI 界面
-- ✅ 本地调度式 `control`（支持优先级抢占与恢复）
+- ✅ 本地调度式 `control` / `controlsoft`（同一通道的新任务替换当前任务）
 - ✅ 直接执行的 `set` / `wave` / `increase` / `decrease` / `clear`
 
 ## 游戏内命令
@@ -268,6 +263,24 @@ versionRange = "[1.0.0,2.0.0)"
 
 ---
 
+### `/dg setsoft <channel> <value>`
+
+**功能**：使用 0-100 的软强度值设置通道强度。
+
+**使用**：
+```
+/dg setsoft 1 50
+/dg setsoft 3 40
+```
+
+**参数说明**：
+- `<channel>`：`1` = 通道 A，`2` = 通道 B，`3` = 同时设置 A/B
+- `<value>`：软强度值（0-100），会根据通道配置换算为设备强度
+
+`setsoft` 是直接执行，不进入本地调度器。
+
+---
+
 ### `/dg increase <channel> <delta>`
 **功能**：直接增加指定通道的强度值
 
@@ -326,7 +339,7 @@ versionRange = "[1.0.0,2.0.0)"
 **使用**：
 ```
 /dg control 1 80 basic_breath 3
-/dg control 2 60 chaos 1.5
+/dg control 2 60 chaos 1
 /dg control 3 40 const 5
 ```
 
@@ -334,12 +347,12 @@ versionRange = "[1.0.0,2.0.0)"
 - `<channel>`：通道号（`1` = 通道 A，`2` = 通道 B，`3` = 同时对 A/B 两个通道分别调度）
 - `<strength>`：目标强度（0-200）
 - `<pulse_id>`：已注册波形 ID，例如 `basic_breath`、`chaos`、`const`
-- `<seconds>`：持续时长（`0.1-60` 秒，支持 `0.1` 秒精度）
+- `<seconds>`：持续时长（整数 `1-60` 秒）
 
 **调度说明**：
 - `control` 使用本地调度器管理波形播放，而不是简单的一次性直发。
 - 高优先级（更高强度）的任务会抢占低优先级任务。
-- 被抢占的旧任务不会恢复，当前实现只保留最新生效任务。
+- 同一通道的新调度会替换当前调度任务。
 - `channel=3` 会拆成通道 A / B 两条独立调度任务，各自独立抢占和结束，互不影响。
 - 调度执行时会按 `control` 传入的目标通道重建运行时波形，不会沿用已注册波形对象里原始的通道字段。
 
@@ -350,23 +363,37 @@ versionRange = "[1.0.0,2.0.0)"
 
 ---
 
-### `/dg wave <pulse_id> <seconds>`
+### `/dg controlsoft <channel> <strength> <pulse_id> <seconds>`
+
+**功能**：使用 0-100 的软强度值调度波形。库会按每个通道的配置换算成设备强度。
+
+**使用**：
+```
+/dg controlsoft 1 50 basic_breath 5
+/dg controlsoft 3 40 const 10
+```
+
+参数范围与 `/dg control` 相同，但 `<strength>` 为 `0-100`。
+
+---
+
+### `/dg wave <channel> <pulse_id> <seconds>`
 **功能**：直接播放指定波形，不经过调度器强度优先级管理
 
 **使用**：
 ```
-/dg wave basic_breath 3
-/dg wave chaos 5
+/dg wave 1 basic_breath 3
+/dg wave 3 chaos 5
 ```
 
 **参数说明**：
+- `<channel>`：`1` = 通道 A，`2` = 通道 B，`3` = 同时播放到 A/B
 - `<pulse_id>`：已注册波形 ID
 - `<seconds>`：持续时长（1-60 秒，整数）
 
 **说明**：
 - 该命令会把波形内容按给定秒数直接发送到设备。
-- `wave` 命令当前不单独传 `channel` 参数，而是使用波形对象自身的通道信息。
-- 运行时会按 `Pulse` 对象中的通道信息发送；若需要显式指定通道或双通道同时播放，优先使用 `/dg control`。
+- `wave` 会根据命令中的通道重建运行时波形。
 - `wave` 为直接执行，不进入本地调度器。
 
 ---
@@ -398,7 +425,7 @@ versionRange = "[1.0.0,2.0.0)"
 - 示例：`/dg_server control Steve 1 60 basic_breath 5`
 - 示例：`/dg_server control Steve 3 40 const 10`
 - 含义：请求 `Steve` 客户端本地 DG Lib 执行调度式波形控制。
-- 当前服务端命令的 `<seconds>` 仍为整数秒（1-60），客户端本地 `/dg control` 才支持 `0.1` 秒精度。
+- 服务端命令与客户端本地 `/dg control` 的 `<seconds>` 都是整数秒（1-60）。
 
 #### `/dg_server wave <player> <pulse_id> <seconds>`
 - 示例：`/dg_server wave Steve chaos 5`
@@ -517,8 +544,11 @@ boolean increaseOk = api.increaseStrength(1, 10);
 // 减少强度（返回 true 表示成功）
 boolean decreaseOk = api.decreaseStrength(1, 10);
 
-// 调度式波形控制（channel: 1=A, 2=B, 3=A+B；seconds 支持小数秒）
-boolean controlOk = api.control(3, 50, "const", 1.5);
+// 调度式波形控制（channel: 1=A, 2=B, 3=A+B；seconds 为 1-60 的整数）
+boolean controlOk = api.control(3, 50, "const", 2);
+
+// 软强度调度（softStrength 为 0-100）
+boolean softControlOk = api.controlSoft(1, 50, "const", 5);
 
 // 发送基础波形（channel: 1=A, 2=B, 3=A+B；seconds: 1-60）
 boolean waveOk = api.playBasicWave(1, 5);
@@ -559,8 +589,8 @@ public class MyModIntegration {
             api.setStrength(1, 100);  // 通道 A 设置为 100
             api.setStrength(2, 80);   // 通道 B 设置为 80
 
-            // 按已注册波形 ID 调度播放（支持抢占/恢复）
-            api.control(3, 60, "basic_breath", 2.5);
+            // 按已注册波形 ID 调度播放（seconds 为整数秒）
+            api.control(3, 60, "basic_breath", 2);
             
             // 查询状态
             var status = api.getStatus();
@@ -576,9 +606,10 @@ public class MyModIntegration {
 
 相关类：
 
-- `Pulse`：波形类型变量（name/channel/seconds/frames）
-- `PulseFileParser`：解析 `.frame` 文件为 `Pulse`
-- `PulseRegistry`：全局波形注册表（id -> Pulse）
+- `RegisteredPulse`：注册表中的波形模板（id + frames）
+- `Pulse`：发送到设备的运行时波形（channel + seconds + frames）
+- `PulseFileParser`：解析 `.frame` 文件为 `RegisteredPulse`
+- `PulseRegistry`：全局波形注册表（id -> `RegisteredPulse`）
 
 `src/main/resources/pulse/` 目录用于存放 `.frame` 文件。
 
@@ -610,8 +641,7 @@ public class MyModIntegration {
 - `frames`: 每帧必须为 16 位 HEX 字符串
 
 说明：
-- 当前运行时最终只读取 `frames`。
-- `Pulse` 内存对象仍保留 `name/channel/seconds` 字段，但 `.frame` 文件中不再需要这些字段。
+- 当前运行时最终只读取 `frames`；通道和时长由命令或 Java API 在播放时指定。
 
 ### 内置波形
 
@@ -625,24 +655,24 @@ public class MyModIntegration {
 
 ```java
 import org.nooberic.dglib.api.DgLibApi;
-import org.nooberic.dglib.pulse.Pulse;
+import org.nooberic.dglib.pulse.RegisteredPulse;
 
 DgLibApi api = DgLibApi.get();
 
-// 注册：文件在 src/main/resources/pulse/my_wave.frame
+// 注册：文件位于 src/main/resources/pulse/my_wave.frame
 boolean ok = api.registerPulse("my_wave_id", "my_wave.frame");
 
 // 全局获取（主模组和附属模组都可按 id 获取）
-Pulse pulse = api.getPulse("my_wave_id");
+RegisteredPulse pulse = api.getPulse("my_wave_id");
 if (pulse != null) {
-    api.playPulse(pulse);
+    api.playPulse(1, pulse, 5);
 }
 ```
 
 可获取全部已注册波形：
 
 ```java
-var all = api.getAllPulses(); // Map<String, Pulse>
+var all = api.getAllPulses(); // Map<String, RegisteredPulse>
 ```
 
 ## 多人联机服务端 API
@@ -781,4 +811,4 @@ wsUrl = "wss://ws.dungeon-lab.cn/"
 如遇到问题，请：
 1. 检查 `logs/latest.log` 中的错误信息
 2. 确保 WebSocket 后端正常运行
-3. 验证游戏和 Forge 版本为 1.20.1
+3. 验证 Minecraft 版本为 `1.20.1`、Forge 版本为 `47.4.20`。
