@@ -1,103 +1,54 @@
 package org.nooberic.dglib.network;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.nooberic.dglib.dglib;
 import org.nooberic.dglib.multiplayer.DgServerCoyoteApi;
 
-import java.util.function.Supplier;
+public record DgC2SClientOpResponsePacket(
+        long requestId,
+        boolean success,
+        boolean paired,
+        int channelAStrength,
+        int channelBStrength,
+        int channelALimit,
+        int channelBLimit,
+        int channelAPainStrength,
+        int channelBPainStrength,
+        int channelASensationLowerLimit,
+        int channelBSensationLowerLimit,
+        String error
+) implements CustomPacketPayload {
+    public static final Type<DgC2SClientOpResponsePacket> TYPE =
+            new Type<>(Identifier.fromNamespaceAndPath(dglib.MODID, "c2s_client_op_response"));
 
-public class DgC2SClientOpResponsePacket {
-    private final long requestId;
-    private final boolean success;
-    private final boolean paired;
-    private final int channelAStrength;
-    private final int channelBStrength;
-    private final int channelALimit;
-    private final int channelBLimit;
-    private final int channelAPainStrength;
-    private final int channelBPainStrength;
-    private final int channelASensationLowerLimit;
-    private final int channelBSensationLowerLimit;
-    private final String error;
+    public static final StreamCodec<FriendlyByteBuf, DgC2SClientOpResponsePacket> STREAM_CODEC = StreamCodec.of(
+            DgC2SClientOpResponsePacket::encode,
+            DgC2SClientOpResponsePacket::decode
+    );
 
-    public DgC2SClientOpResponsePacket(
-            long requestId,
-            boolean success,
-            boolean paired,
-            int channelAStrength,
-            int channelBStrength,
-            int channelALimit,
-            int channelBLimit,
-                int channelAPainStrength,
-                int channelBPainStrength,
-                int channelASensationLowerLimit,
-                int channelBSensationLowerLimit,
-            String error
-    ) {
-        this.requestId = requestId;
-        this.success = success;
-        this.paired = paired;
-        this.channelAStrength = channelAStrength;
-        this.channelBStrength = channelBStrength;
-        this.channelALimit = channelALimit;
-        this.channelBLimit = channelBLimit;
-        this.channelAPainStrength = channelAPainStrength;
-        this.channelBPainStrength = channelBPainStrength;
-        this.channelASensationLowerLimit = channelASensationLowerLimit;
-        this.channelBSensationLowerLimit = channelBSensationLowerLimit;
-        this.error = error == null ? "" : error;
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
-    public long getRequestId() {
-        return requestId;
-    }
-
-    public boolean isSuccess() {
-        return success;
-    }
-
-    public boolean isPaired() {
-        return paired;
-    }
-
-    public int getChannelAStrength() {
-        return channelAStrength;
-    }
-
-    public int getChannelBStrength() {
-        return channelBStrength;
-    }
-
-    public int getChannelALimit() {
-        return channelALimit;
-    }
-
-    public int getChannelBLimit() {
-        return channelBLimit;
-    }
-
-    public int getChannelAPainStrength() {
-        return channelAPainStrength;
-    }
-
-    public int getChannelBPainStrength() {
-        return channelBPainStrength;
-    }
-
-    public int getChannelASensationLowerLimit() {
-        return channelASensationLowerLimit;
-    }
-
-    public int getChannelBSensationLowerLimit() {
-        return channelBSensationLowerLimit;
-    }
-
-    public String getError() {
-        return error;
-    }
-
-    public static void encode(DgC2SClientOpResponsePacket msg, FriendlyByteBuf buf) {
+    public long getRequestId() { return requestId; }
+    public boolean isSuccess() { return success; }
+    public boolean isPaired() { return paired; }
+    public int getChannelAStrength() { return channelAStrength; }
+    public int getChannelBStrength() { return channelBStrength; }
+    public int getChannelALimit() { return channelALimit; }
+    public int getChannelBLimit() { return channelBLimit; }
+    public int getChannelAPainStrength() { return channelAPainStrength; }
+    public int getChannelBPainStrength() { return channelBPainStrength; }
+    public int getChannelASensationLowerLimit() { return channelASensationLowerLimit; }
+    public int getChannelBSensationLowerLimit() { return channelBSensationLowerLimit; }
+    public String getError() { return error; }
+    public static void encode(FriendlyByteBuf buf, DgC2SClientOpResponsePacket msg) {
         buf.writeLong(msg.requestId);
         buf.writeBoolean(msg.success);
         buf.writeBoolean(msg.paired);
@@ -129,12 +80,9 @@ public class DgC2SClientOpResponsePacket {
         );
     }
 
-    public static void handle(DgC2SClientOpResponsePacket msg, Supplier<NetworkEvent.Context> ctxSupplier) {
-        NetworkEvent.Context ctx = ctxSupplier.get();
-        ServerPlayer sender = ctx.getSender();
-        if (sender != null) {
+    public static void handle(DgC2SClientOpResponsePacket msg, IPayloadContext ctx) {
+        if (ctx.player() instanceof ServerPlayer sender) {
             ctx.enqueueWork(() -> DgServerCoyoteApi.get().handleClientResponse(sender, msg));
         }
-        ctx.setPacketHandled(true);
     }
 }

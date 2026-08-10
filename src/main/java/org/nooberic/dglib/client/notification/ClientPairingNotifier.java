@@ -23,7 +23,7 @@ public final class ClientPairingNotifier {
                 minecraft.setScreen(null);
             }
             if (minecraft.player != null) {
-                minecraft.player.displayClientMessage(Component.literal("§a连接成功"), false);
+                minecraft.player.sendSystemMessage(Component.literal("§a连接成功"));
             }
         });
     }

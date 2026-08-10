@@ -2,7 +2,7 @@ package org.nooberic.dglib.network;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundSource;
 import org.nooberic.dglib.dglib;
 
@@ -17,11 +17,11 @@ public final class DgClientParticleShockSoundPlayer {
         }
 
         minecraft.getSoundManager().play(new SimpleSoundInstance(
-                new ResourceLocation(dglib.MODID, "electric_shock"),
+                Identifier.fromNamespaceAndPath(dglib.MODID, "electric_shock"),
                 SoundSource.PLAYERS,
                 volume,
                 pitch,
-                minecraft.level.random,
+                minecraft.level.getRandom(),
                 false,
                 0,
                 SimpleSoundInstance.Attenuation.NONE,

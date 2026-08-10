@@ -9,6 +9,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.server.level.ServerPlayer;
 import org.nooberic.dglib.api.DgLibApi;
 import org.nooberic.dglib.multiplayer.CoyoteStatusSnapshot;
@@ -40,7 +41,7 @@ public final class DgLibCommands {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("dg_server")
-                .requires(source -> source.hasPermission(2))
+                .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
             .then(Commands.literal("status")
                 .then(Commands.argument("player", EntityArgument.player())
                     .executes(ctx -> {
@@ -54,7 +55,7 @@ public final class DgLibCommands {
                             String paired = snapshot.isPaired() ? "§aYES" : "§cNO";
                             return String.format(
                                 "§2[DG Server]§r %s | Paired: %s | Strength A: %d/%d | Strength B: %d/%d | Pain A/B: %d/%d | Floor A/B: %d/%d",
-                                target.getGameProfile().getName(), paired,
+                                target.getGameProfile().name(), paired,
                                 snapshot.getChannelAStrength(), snapshot.getChannelALimit(),
                                 snapshot.getChannelBStrength(), snapshot.getChannelBLimit(),
                                 snapshot.getChannelAPainStrength(), snapshot.getChannelBPainStrength(),
@@ -70,7 +71,7 @@ public final class DgLibCommands {
                             ServerPlayer target = EntityArgument.getPlayer(ctx, "player");
                             ElectricityParticleUtil.spawnAroundPlayer(target, 32);
                             ctx.getSource().sendSuccess(
-                                    () -> Component.literal(String.format("§2[DG Server]§r Broadcast electricity particles on %s.", target.getGameProfile().getName())),
+                                    () -> Component.literal(String.format("§2[DG Server]§r Broadcast electricity particles on %s.", target.getGameProfile().name())),
                                     false
                             );
                             return 1;
@@ -89,8 +90,8 @@ public final class DgLibCommands {
                                                             ctx.getSource(),
                                                             coyote.setStrength(channel, value),
                                                             ok -> ok
-                                                                    ? String.format("§2[DG Server]§r Set %s Ch%s to %d sent.", target.getGameProfile().getName(), channel == 3 ? "1+2" : String.valueOf(channel), value)
-                                                                    : String.format("§c[DG Server] %s operation rejected (not paired or unavailable).", target.getGameProfile().getName())
+                                                                    ? String.format("§2[DG Server]§r Set %s Ch%s to %d sent.", target.getGameProfile().name(), channel == 3 ? "1+2" : String.valueOf(channel), value)
+                                                                    : String.format("§c[DG Server] %s operation rejected (not paired or unavailable).", target.getGameProfile().name())
                                                     );
                                                     return 1;
                                                 })))))
@@ -108,8 +109,8 @@ public final class DgLibCommands {
                                                             ctx.getSource(),
                                                             coyote.setSoftStrength(channel, value),
                                                             ok -> ok
-                                                                    ? String.format("§2[DG Server]§r Set soft %s Ch%s to %d sent.", target.getGameProfile().getName(), channel == 3 ? "1+2" : String.valueOf(channel), value)
-                                                                    : String.format("§c[DG Server] %s operation rejected (not paired or unavailable).", target.getGameProfile().getName())
+                                                                    ? String.format("§2[DG Server]§r Set soft %s Ch%s to %d sent.", target.getGameProfile().name(), channel == 3 ? "1+2" : String.valueOf(channel), value)
+                                                                    : String.format("§c[DG Server] %s operation rejected (not paired or unavailable).", target.getGameProfile().name())
                                                     );
                                                     return 1;
                                                 })))))
@@ -127,8 +128,8 @@ public final class DgLibCommands {
                                                             ctx.getSource(),
                                                             coyote.increaseStrength(channel, delta),
                                                             ok -> ok
-                                                                ? String.format("§2[DG Server]§r Increased %s Ch%s by %d.", target.getGameProfile().getName(), channel == 3 ? "1+2" : String.valueOf(channel), delta)
-                                                                : String.format("§c[DG Server] %s increase rejected (not paired or unavailable).", target.getGameProfile().getName())
+                                                                ? String.format("§2[DG Server]§r Increased %s Ch%s by %d.", target.getGameProfile().name(), channel == 3 ? "1+2" : String.valueOf(channel), delta)
+                                                                : String.format("§c[DG Server] %s increase rejected (not paired or unavailable).", target.getGameProfile().name())
                                                         );
                                                         return 1;
                                                     })))))
@@ -146,8 +147,8 @@ public final class DgLibCommands {
                                                             ctx.getSource(),
                                                             coyote.decreaseStrength(channel, delta),
                                                             ok -> ok
-                                                                ? String.format("§2[DG Server]§r Decreased %s Ch%s by %d.", target.getGameProfile().getName(), channel == 3 ? "1+2" : String.valueOf(channel), delta)
-                                                                : String.format("§c[DG Server] %s decrease rejected (not paired or unavailable).", target.getGameProfile().getName())
+                                                                ? String.format("§2[DG Server]§r Decreased %s Ch%s by %d.", target.getGameProfile().name(), channel == 3 ? "1+2" : String.valueOf(channel), delta)
+                                                                : String.format("§c[DG Server] %s decrease rejected (not paired or unavailable).", target.getGameProfile().name())
                                                         );
                                                         return 1;
                                                     })))))
@@ -163,8 +164,8 @@ public final class DgLibCommands {
                                                         ctx.getSource(),
                                                         coyote.clear(channel),
                                                         ok -> ok
-                                                            ? String.format("§2[DG Server]§r Cleared %s Ch%s wave and strength.", target.getGameProfile().getName(), channel == 3 ? "1+2" : String.valueOf(channel))
-                                                            : String.format("§c[DG Server] %s clear rejected (not paired or unavailable).", target.getGameProfile().getName())
+                                                            ? String.format("§2[DG Server]§r Cleared %s Ch%s wave and strength.", target.getGameProfile().name(), channel == 3 ? "1+2" : String.valueOf(channel))
+                                                            : String.format("§c[DG Server] %s clear rejected (not paired or unavailable).", target.getGameProfile().name())
                                                     );
                                                     return 1;
                                         }))))
@@ -187,8 +188,8 @@ public final class DgLibCommands {
                                                                     ctx.getSource(),
                                                                     coyote.control(channel, strength, pulseId, seconds),
                                                                     ok -> ok
-                                                                        ? String.format("§2[DG Server]§r Control sent to %s: Ch%s=%d, pulse='%s', %ds.", target.getGameProfile().getName(), channel == 3 ? "1+2" : String.valueOf(channel), strength, pulseId, seconds)
-                                                                        : String.format("§c[DG Server] %s control rejected (not paired / id not found / unavailable).", target.getGameProfile().getName())
+                                                                        ? String.format("§2[DG Server]§r Control sent to %s: Ch%s=%d, pulse='%s', %ds.", target.getGameProfile().name(), channel == 3 ? "1+2" : String.valueOf(channel), strength, pulseId, seconds)
+                                                                        : String.format("§c[DG Server] %s control rejected (not paired / id not found / unavailable).", target.getGameProfile().name())
                                                                 );
                                                                 return 1;
                                                             })))))))
@@ -211,8 +212,8 @@ public final class DgLibCommands {
                                                                     ctx.getSource(),
                                                                     coyote.controlSoft(channel, strength, pulseId, seconds),
                                                                     ok -> ok
-                                                                        ? String.format("§2[DG Server]§r Soft control sent to %s: Ch%s=%d, pulse='%s', %ds.", target.getGameProfile().getName(), channel == 3 ? "1+2" : String.valueOf(channel), strength, pulseId, seconds)
-                                                                        : String.format("§c[DG Server] %s soft control rejected (not paired / id not found / unavailable).", target.getGameProfile().getName())
+                                                                        ? String.format("§2[DG Server]§r Soft control sent to %s: Ch%s=%d, pulse='%s', %ds.", target.getGameProfile().name(), channel == 3 ? "1+2" : String.valueOf(channel), strength, pulseId, seconds)
+                                                                        : String.format("§c[DG Server] %s soft control rejected (not paired / id not found / unavailable).", target.getGameProfile().name())
                                                                 );
                                                                 return 1;
                                                             })))))))
@@ -233,8 +234,8 @@ public final class DgLibCommands {
                                                             ctx.getSource(),
                                             coyote.playPulseById(channel, pulseId, seconds),
                                                             ok -> ok
-                                                ? String.format("§2[DG Server]§r Pulse '%s' sent to %s on Ch%s for %ds.", pulseId, target.getGameProfile().getName(), channel == 3 ? "1+2" : String.valueOf(channel), seconds)
-                                                                    : String.format("§c[DG Server] %s pulse '%s' rejected (not paired / id not found / unavailable).", target.getGameProfile().getName(), pulseId)
+                                                ? String.format("§2[DG Server]§r Pulse '%s' sent to %s on Ch%s for %ds.", pulseId, target.getGameProfile().name(), channel == 3 ? "1+2" : String.valueOf(channel), seconds)
+                                                                    : String.format("§c[DG Server] %s pulse '%s' rejected (not paired / id not found / unavailable).", target.getGameProfile().name(), pulseId)
                                                     );
                                                     return 1;
                                     }))))))

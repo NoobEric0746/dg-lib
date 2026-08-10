@@ -3,28 +3,24 @@ package org.nooberic.dglib.client.particle;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleProvider;
+import net.minecraft.client.particle.SimpleAnimatedParticle;
 import net.minecraft.client.particle.SpriteSet;
-import net.minecraft.client.particle.ParticleRenderType;
-import net.minecraft.client.particle.TextureSheetParticle;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.core.particles.SimpleParticleType;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraft.util.RandomSource;
 
-@OnlyIn(Dist.CLIENT)
-public class ElectricityParticle extends TextureSheetParticle {
+public class ElectricityParticle extends SimpleAnimatedParticle {
+    /** Equivalent of the removed LightTexture.FULL_BRIGHT (0xF000F0). */
+    private static final int FULL_BRIGHT = 15728880;
     private static final int MIN_LIFETIME = 6;
     private static final int MAX_LIFETIME = 6;
     private static final float MIN_SIZE = 0.125F;
     private static final float MAX_SIZE = 0.125F;
     private static final int SHRINK_START_TICK = 2;
     private static final int SHRINK_END_TICK = 6;
-    private final SpriteSet sprites;
     private final float baseSize;
 
     protected ElectricityParticle(ClientLevel level, double x, double y, double z, SpriteSet sprites) {
-        super(level, x, y, z);
-        this.sprites = sprites;
+        super(level, x, y, z, sprites, 0.0F);
         this.lifetime = MIN_LIFETIME + this.random.nextInt(MAX_LIFETIME - MIN_LIFETIME + 1);
         this.baseSize = MIN_SIZE + this.random.nextFloat() * (MAX_SIZE - MIN_SIZE);
         this.quadSize = this.baseSize;
@@ -33,7 +29,6 @@ public class ElectricityParticle extends TextureSheetParticle {
         this.xd = 0.0D;
         this.yd = 0.0D;
         this.zd = 0.0D;
-        this.setSpriteFromAge(sprites);
     }
 
     @Override
@@ -50,17 +45,11 @@ public class ElectricityParticle extends TextureSheetParticle {
     }
 
     @Override
-    public ParticleRenderType getRenderType() {
-        return ParticleRenderType.PARTICLE_SHEET_OPAQUE;
+    public int getLightCoords(float partialTick) {
+        return FULL_BRIGHT;
     }
 
-    @Override
-    public int getLightColor(float partialTick) {
-        return LightTexture.FULL_BRIGHT;
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public static final class Provider implements ParticleProvider<SimpleParticleType> {
+        public static final class Provider implements ParticleProvider<SimpleParticleType> {
         private final SpriteSet sprites;
 
         public Provider(SpriteSet sprites) {
@@ -68,7 +57,8 @@ public class ElectricityParticle extends TextureSheetParticle {
         }
 
         @Override
-        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd) {
+        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z,
+                                       double xd, double yd, double zd, RandomSource random) {
             return new ElectricityParticle(level, x, y, z, sprites);
         }
     }

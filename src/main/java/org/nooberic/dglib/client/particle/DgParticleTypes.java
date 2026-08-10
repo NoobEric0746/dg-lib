@@ -1,17 +1,19 @@
 package org.nooberic.dglib.client.particle;
 
+import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.particles.SimpleParticleType;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.minecraft.core.registries.Registries;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
 import org.nooberic.dglib.dglib;
 
 public final class DgParticleTypes {
-    public static final DeferredRegister<net.minecraft.core.particles.ParticleType<?>> PARTICLES =
-            DeferredRegister.create(ForgeRegistries.PARTICLE_TYPES, dglib.MODID);
+    public static final DeferredRegister<ParticleType<?>> PARTICLES =
+            DeferredRegister.create(Registries.PARTICLE_TYPE, dglib.MODID);
 
-    public static final RegistryObject<SimpleParticleType> ELECTRICITY =
-            PARTICLES.register("electricity", () -> new SimpleParticleType(true));
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> ELECTRICITY =
+            PARTICLES.register("electricity", () -> new SimpleParticleType(false) {
+            });
 
     private DgParticleTypes() {
     }

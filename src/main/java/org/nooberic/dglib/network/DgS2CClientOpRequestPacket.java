@@ -1,52 +1,36 @@
 package org.nooberic.dglib.network;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.nooberic.dglib.dglib;
 
-import java.util.function.Supplier;
-
-public class DgS2CClientOpRequestPacket {
-    private final long requestId;
-    private final DgClientOperation operation;
-    private final int channel;
-    private final int value;
-    private final String payload;
+public record DgS2CClientOpRequestPacket(long requestId, DgClientOperation operation, int channel, int value, String payload) implements CustomPacketPayload {
+    public static final Type<DgS2CClientOpRequestPacket> TYPE =
+            new Type<>(Identifier.fromNamespaceAndPath(dglib.MODID, "s2c_client_op_request"));
 
     public DgS2CClientOpRequestPacket(long requestId, DgClientOperation operation, int channel, int value) {
         this(requestId, operation, channel, value, "");
     }
 
-    public DgS2CClientOpRequestPacket(long requestId, DgClientOperation operation, int channel, int value, String payload) {
-        this.requestId = requestId;
-        this.operation = operation;
-        this.channel = channel;
-        this.value = value;
-        this.payload = payload == null ? "" : payload;
+    public static final StreamCodec<FriendlyByteBuf, DgS2CClientOpRequestPacket> STREAM_CODEC = StreamCodec.of(
+            DgS2CClientOpRequestPacket::encode,
+            DgS2CClientOpRequestPacket::decode
+    );
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
-    public long getRequestId() {
-        return requestId;
-    }
-
-    public DgClientOperation getOperation() {
-        return operation;
-    }
-
-    public int getChannel() {
-        return channel;
-    }
-
-    public int getValue() {
-        return value;
-    }
-
-    public String getPayload() {
-        return payload;
-    }
-
-    public static void encode(DgS2CClientOpRequestPacket msg, FriendlyByteBuf buf) {
+    public long getRequestId() { return requestId; }
+    public DgClientOperation getOperation() { return operation; }
+    public int getChannel() { return channel; }
+    public int getValue() { return value; }
+    public String getPayload() { return payload; }
+    public static void encode(FriendlyByteBuf buf, DgS2CClientOpRequestPacket msg) {
         buf.writeLong(msg.requestId);
         buf.writeInt(msg.operation.id());
         buf.writeInt(msg.channel);
@@ -63,9 +47,7 @@ public class DgS2CClientOpRequestPacket {
         return new DgS2CClientOpRequestPacket(requestId, operation, channel, value, payload);
     }
 
-    public static void handle(DgS2CClientOpRequestPacket msg, Supplier<NetworkEvent.Context> ctxSupplier) {
-        NetworkEvent.Context ctx = ctxSupplier.get();
-        ctx.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> DgClientPacketExecutor.handleRequest(msg)));
-        ctx.setPacketHandled(true);
+    public static void handle(DgS2CClientOpRequestPacket msg, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> DgClientPacketExecutor.handleRequest(msg));
     }
 }

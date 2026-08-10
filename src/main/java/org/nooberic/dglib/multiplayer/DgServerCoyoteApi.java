@@ -2,7 +2,7 @@ package org.nooberic.dglib.multiplayer;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.server.ServerLifecycleHooks;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import org.nooberic.dglib.network.DgC2SClientOpResponsePacket;
 import org.nooberic.dglib.network.DgClientOperation;
 import org.nooberic.dglib.network.DgNetworking;

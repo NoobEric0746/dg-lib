@@ -16,6 +16,7 @@
   "config.dglib.particle_shock_sound_pitch": "电击粒子音效音调",
   "config.dglib.particle_shock_sound_cooldown_ticks": "电击粒子音效冷却（刻）",
   "key.categories.dglib": "DG Lib",
+  "key.category.dglib.ui": "DG Lib",
   "key.dglib.open_ui": "打开 DG-LAB 控制界面",
   "key.dglib.emergency_stop": "紧急停止 DG-LAB 输出",
   "screen.dglib.qr_code.title": "DG-LAB 设备配对",
