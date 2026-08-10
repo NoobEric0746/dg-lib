@@ -45,9 +45,8 @@ public final class DgClientCommands {
             } catch (Throwable e) {
                 e.printStackTrace();
                 if (minecraft.player != null) {
-                    minecraft.player.displayClientMessage(
-                            Component.literal("§c[DG Lib] Failed to open QR UI: " + e.getClass().getSimpleName()),
-                            false
+                    minecraft.player.sendSystemMessage(
+                            Component.literal("§c[DG Lib] Failed to open QR UI: " + e.getClass().getSimpleName())
                     );
                 }
             }
@@ -141,7 +140,7 @@ public final class DgClientCommands {
                                 } catch (Throwable e) {
                                     e.printStackTrace();
                                     if (minecraft.player != null) {
-                                        minecraft.player.displayClientMessage(Component.literal("§c[DG Lib] Failed to open Strength Control UI: " + e.getClass().getSimpleName()), false);
+                                        minecraft.player.sendSystemMessage(Component.literal("§c[DG Lib] Failed to open Strength Control UI: " + e.getClass().getSimpleName()));
                                     }
                                 }
                             });

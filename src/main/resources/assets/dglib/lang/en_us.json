@@ -16,6 +16,7 @@
   "config.dglib.particle_shock_sound_pitch": "Particle Shock Sound Pitch",
   "config.dglib.particle_shock_sound_cooldown_ticks": "Particle Shock Sound Cooldown (ticks)",
   "key.categories.dglib": "DG Lib",
+  "key.category.dglib.ui": "DG Lib",
   "key.dglib.open_ui": "Open DG-LAB Control Screen",
   "key.dglib.emergency_stop": "Emergency Stop DG-LAB Output",
   "screen.dglib.qr_code.title": "DG-LAB Device Pairing",

@@ -2,10 +2,13 @@ package org.nooberic.dglib.client.key;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
+import org.nooberic.dglib.dglib;
 
 public final class DgKeyBindings {
-    public static final String CATEGORY = "key.categories.dglib";
+    public static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(
+            Identifier.fromNamespaceAndPath(dglib.MODID, "ui"));
 
     public static final KeyMapping OPEN_DG_UI = new KeyMapping(
             "key.dglib.open_ui",

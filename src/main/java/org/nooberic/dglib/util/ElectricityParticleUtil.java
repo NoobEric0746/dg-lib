@@ -33,7 +33,7 @@ public final class ElectricityParticleUtil {
             return;
         }
 
-        ServerLevel level = player.serverLevel();
+        ServerLevel level = player.level();
         AABB box = player.getBoundingBox();
         RandomSource random = player.getRandom();
 
@@ -60,7 +60,7 @@ public final class ElectricityParticleUtil {
             return;
         }
 
-        long gameTime = target.serverLevel().getGameTime();
+        long gameTime = target.level().getGameTime();
         UUID targetId = target.getUUID();
         Long lastSoundTick = LAST_SHOCK_SOUND_TICKS.get(targetId);
         if (lastSoundTick != null && gameTime - lastSoundTick < Config.particleShockSoundCooldownTicks) {
@@ -68,7 +68,7 @@ public final class ElectricityParticleUtil {
         }
         LAST_SHOCK_SOUND_TICKS.put(targetId, gameTime);
 
-        for (ServerPlayer listener : target.serverLevel().players()) {
+        for (ServerPlayer listener : target.level().players()) {
             double distanceSquared = listener.distanceToSqr(target);
             if (distanceSquared >= MAX_AUDIBLE_RADIUS_SQUARED) {
                 continue;

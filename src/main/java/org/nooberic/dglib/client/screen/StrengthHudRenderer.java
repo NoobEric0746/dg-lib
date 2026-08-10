@@ -1,7 +1,7 @@
 package org.nooberic.dglib.client.screen;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.nooberic.dglib.Config;
 import org.nooberic.dglib.api.DgLibApi;
 import org.nooberic.dglib.service.ConnectionState;
@@ -27,18 +27,18 @@ public final class StrengthHudRenderer {
 
         DeviceStatus status = DgLibApi.get().getStatus();
         ConnectionState state = DgLibApi.get().getConnectionState();
-        String pairedText = DgLibApi.get().isPaired() ? "已配对" : "未配对(" + state + ")";
+        String pairedText = DgLibApi.get().isPaired() ? "已配对 (" : "未配对 (" + state + ")";
         String aCurrent = hudMode == 2 ? "??" : String.valueOf(status.getChannelAStrength());
         String bCurrent = hudMode == 2 ? "??" : String.valueOf(status.getChannelBStrength());
 
-        GuiGraphics g = context.guiGraphics();
+        GuiGraphicsExtractor g = context.guiGraphics();
         int x = 8;
         int y = 8;
-        g.drawString(mc.font, "DG-LAB: " + pairedText, x, y, DgLibApi.get().isPaired() ? 0x55FF55 : 0xFF5555);
-        g.drawString(mc.font, "A: " + aCurrent + "/" + status.getChannelALimit(), x, y + 12, 0xFFFFFF);
-        g.drawString(mc.font, "B: " + bCurrent + "/" + status.getChannelBLimit(), x, y + 24, 0xFFFFFF);
+        g.text(mc.font, "DG-LAB: " + pairedText, x, y, DgLibApi.get().isPaired() ? 0xFF55FF55 : 0xFFFF5555);
+        g.text(mc.font, "A: " + aCurrent + "/" + status.getChannelALimit(), x, y + 12, 0xFFFFFFFF);
+        g.text(mc.font, "B: " + bCurrent + "/" + status.getChannelBLimit(), x, y + 24, 0xFFFFFFFF);
     }
 
-    public record RenderContext(GuiGraphics guiGraphics) {
+    public record RenderContext(GuiGraphicsExtractor guiGraphics) {
     }
 }

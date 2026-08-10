@@ -2,13 +2,12 @@ package org.nooberic.dglib.client.screen;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import org.nooberic.dglib.Config;
 import org.nooberic.dglib.api.DgLibApi;
 import org.nooberic.dglib.service.DeviceStatus;
@@ -18,7 +17,6 @@ import org.slf4j.Logger;
  * Strength Control Screen for DG-LAB channels
  * 用于控制两个通道强度上限的设置界面
  */
-@OnlyIn(Dist.CLIENT)
 public class StrengthControlScreen extends Screen {
     private static final Logger LOGGER = LogUtils.getLogger();
 
@@ -92,27 +90,26 @@ public class StrengthControlScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
-        this.renderBackground(guiGraphics);
-        guiGraphics.drawCenteredString(this.font, "DG-LAB 控制面板", this.width / 2, 12, 0xFFFFFF);
-        guiGraphics.drawCenteredString(this.font, "强度上限请在手机端修改", this.width / 2, 28, 0x888888);
-        guiGraphics.drawCenteredString(this.font,
+    public void extractRenderState(GuiGraphicsExtractor guiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
+        guiGraphics.centeredText(this.font, "DG-LAB 控制面板", this.width / 2, 12, 0xFFFFFFFF);
+        guiGraphics.centeredText(this.font, "强度上限请在手机端修改", this.width / 2, 28, 0xFF888888);
+        guiGraphics.centeredText(this.font,
                 "感受阈值是能感到电流刺激的最小强度,痛感阈值是感觉到痛的最小强度",
-                this.width / 2, this.height - 62, 0x888888);
-        guiGraphics.drawCenteredString(this.font,
+                this.width / 2, this.height - 62, 0xFF888888);
+        guiGraphics.centeredText(this.font,
                 "模组可以读取这些值来实现更精准的强度控制(也可能没有这样做) : )",
-                this.width / 2, this.height - 50, 0x888888);
+                this.width / 2, this.height - 50, 0xFF888888);
 
-        super.render(guiGraphics, pMouseX, pMouseY, pPartialTick);
+        super.extractRenderState(guiGraphics, pMouseX, pMouseY, pPartialTick);
     }
 
     @Override
-    public boolean keyPressed(int pKeyCode, int pScanCode, int pModifiers) {
-        if (pKeyCode == 256) {
+    public boolean keyPressed(KeyEvent event) {
+        if (event.key() == 256) {
             this.minecraft.setScreen(null);
             return true;
         }
-        return super.keyPressed(pKeyCode, pScanCode, pModifiers);
+        return super.keyPressed(event);
     }
 
     @Override
@@ -143,9 +140,9 @@ public class StrengthControlScreen extends Screen {
         }
         int mode = Config.getHudDisplayMode();
         String text = switch (mode) {
-            case 1 -> "指示:隐藏";
-            case 2 -> "指示:隐藏强度";
-            default -> "指示:正常";
+            case 1 -> "提示:隐藏";
+            case 2 -> "提示:隐藏强度";
+            default -> "提示:正常";
         };
         hudModeButton.setMessage(Component.literal(text));
     }

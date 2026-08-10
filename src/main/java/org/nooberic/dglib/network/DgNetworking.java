@@ -1,60 +1,31 @@
 package org.nooberic.dglib.network;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.network.simple.SimpleChannel;
-import org.nooberic.dglib.dglib;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 public final class DgNetworking {
     private static final String PROTOCOL_VERSION = "1";
 
-    public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
-            new ResourceLocation(dglib.MODID, "main"),
-            () -> PROTOCOL_VERSION,
-            PROTOCOL_VERSION::equals,
-            PROTOCOL_VERSION::equals
-    );
-
-    private static boolean registered = false;
-
     private DgNetworking() {
     }
 
-    public static void register() {
-        if (registered) {
-            return;
-        }
+    public static void register(RegisterPayloadHandlersEvent event) {
+        PayloadRegistrar registrar = event.registrar(PROTOCOL_VERSION);
 
-        int index = 0;
-        CHANNEL.messageBuilder(DgS2CClientOpRequestPacket.class, index++, NetworkDirection.PLAY_TO_CLIENT)
-                .encoder(DgS2CClientOpRequestPacket::encode)
-                .decoder(DgS2CClientOpRequestPacket::decode)
-                .consumerMainThread(DgS2CClientOpRequestPacket::handle)
-                .add();
-
-        CHANNEL.messageBuilder(DgS2CParticleShockSoundPacket.class, index++, NetworkDirection.PLAY_TO_CLIENT)
-            .encoder(DgS2CParticleShockSoundPacket::encode)
-            .decoder(DgS2CParticleShockSoundPacket::decode)
-            .consumerMainThread(DgS2CParticleShockSoundPacket::handle)
-            .add();
-
-        CHANNEL.messageBuilder(DgC2SClientOpResponsePacket.class, index, NetworkDirection.PLAY_TO_SERVER)
-                .encoder(DgC2SClientOpResponsePacket::encode)
-                .decoder(DgC2SClientOpResponsePacket::decode)
-                .consumerMainThread(DgC2SClientOpResponsePacket::handle)
-                .add();
-
-        registered = true;
+        registrar.playToClient(DgS2CClientOpRequestPacket.TYPE, DgS2CClientOpRequestPacket.STREAM_CODEC, DgS2CClientOpRequestPacket::handle);
+        registrar.playToClient(DgS2CParticleShockSoundPacket.TYPE, DgS2CParticleShockSoundPacket.STREAM_CODEC, DgS2CParticleShockSoundPacket::handle);
+        registrar.playToServer(DgC2SClientOpResponsePacket.TYPE, DgC2SClientOpResponsePacket.STREAM_CODEC, DgC2SClientOpResponsePacket::handle);
     }
 
     public static void sendToPlayer(ServerPlayer player, Object packet) {
-        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
+        PacketDistributor.sendToPlayer(player, (CustomPacketPayload) packet);
     }
 
     public static void sendToServer(Object packet) {
-        CHANNEL.sendToServer(packet);
+        ClientPacketDistributor.sendToServer((CustomPacketPayload) packet);
     }
 }

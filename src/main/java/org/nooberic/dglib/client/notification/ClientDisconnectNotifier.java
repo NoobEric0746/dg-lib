@@ -11,7 +11,7 @@ public final class ClientDisconnectNotifier {
         Minecraft minecraft = Minecraft.getInstance();
         minecraft.execute(() -> {
             if (minecraft.player != null) {
-                minecraft.player.displayClientMessage(Component.literal("§c设备已断开"), false);
+                minecraft.player.sendSystemMessage(Component.literal("§c设备已断开"));
             }
         });
     }
