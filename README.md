@@ -2,7 +2,7 @@
 
 DG-LAB 设备控制库：通过 WebSocket 连接 DG-LAB 设备，提供配对、强度控制、波形调度与游戏 UI 支持。
 
-原仓库 [NoobEric0746/dg-lib](https://github.com/NoobEric0746/dg-lib) 基于 Minecraft Forge 1.20.1。本仓库由 MeadalFlute 维护，迁移至 **NeoForge 26.1.2.74**（原作者未发布 26.1.2 版本，此为本地迁移版）。
+原仓库 [NoobEric0746/dg-lib](https://github.com/NoobEric0746/dg-lib) 基于 Minecraft Forge 1.20.1。本仓库已迁移至 **NeoForge 26.1.2.74**（原作者未发布 26.1.2 版本，此为本地迁移版）。
 
 ## 版本信息
 
