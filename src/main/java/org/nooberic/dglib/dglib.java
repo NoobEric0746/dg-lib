@@ -1,16 +1,15 @@
 package org.nooberic.dglib;
 
 import com.mojang.logging.LogUtils;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import org.nooberic.dglib.command.DgLibCommands;
 import org.nooberic.dglib.client.particle.DgParticleTypes;
 import org.nooberic.dglib.client.sound.DgSoundEvents;
@@ -24,17 +23,16 @@ public class dglib {
     public static final String MODID = "dglib";
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    public dglib() {
-        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+    public dglib(IEventBus modEventBus, ModContainer modContainer) {
         modEventBus.addListener(this::commonSetup);
+        modEventBus.addListener(DgNetworking::register);
         DgParticleTypes.PARTICLES.register(modEventBus);
         DgSoundEvents.SOUND_EVENTS.register(modEventBus);
-        MinecraftForge.EVENT_BUS.register(this);
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+        NeoForge.EVENT_BUS.register(this);
+        modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
-        event.enqueueWork(DgNetworking::register);
         LOGGER.info("DG Lib common setup complete");
     }
 

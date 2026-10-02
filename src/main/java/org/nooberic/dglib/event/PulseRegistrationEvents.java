@@ -1,15 +1,15 @@
 package org.nooberic.dglib.event;
 
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.bus.api.SubscribeEvent;
 import org.nooberic.dglib.api.DgLibApi;
 import org.nooberic.dglib.dglib;
 import org.slf4j.Logger;
 import com.mojang.logging.LogUtils;
 
-@Mod.EventBusSubscriber(modid = dglib.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = dglib.MODID)
 public final class PulseRegistrationEvents {
     private static final Logger LOGGER = LogUtils.getLogger();
 

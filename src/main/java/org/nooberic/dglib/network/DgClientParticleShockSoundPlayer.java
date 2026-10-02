@@ -17,7 +17,7 @@ public final class DgClientParticleShockSoundPlayer {
         }
 
         minecraft.getSoundManager().play(new SimpleSoundInstance(
-                new ResourceLocation(dglib.MODID, "electric_shock"),
+                ResourceLocation.fromNamespaceAndPath(dglib.MODID, "electric_shock"),
                 SoundSource.PLAYERS,
                 volume,
                 pitch,

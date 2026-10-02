@@ -1,13 +1,24 @@
 package org.nooberic.dglib.network;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import org.nooberic.dglib.dglib;
 
-import java.util.function.Supplier;
+public class DgS2CClientOpRequestPacket implements CustomPacketPayload {
+    public static final Type<DgS2CClientOpRequestPacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(dglib.MODID, "client_op_request"));
+    public static final StreamCodec<FriendlyByteBuf, DgS2CClientOpRequestPacket> STREAM_CODEC =
+            StreamCodec.of((buffer, message) -> encode(message, buffer), DgS2CClientOpRequestPacket::decode);
 
-public class DgS2CClientOpRequestPacket {
+    @Override
+    public Type<DgS2CClientOpRequestPacket> type() {
+        return TYPE;
+    }
+
     private final long requestId;
     private final DgClientOperation operation;
     private final int channel;
@@ -63,9 +74,9 @@ public class DgS2CClientOpRequestPacket {
         return new DgS2CClientOpRequestPacket(requestId, operation, channel, value, payload);
     }
 
-    public static void handle(DgS2CClientOpRequestPacket msg, Supplier<NetworkEvent.Context> ctxSupplier) {
-        NetworkEvent.Context ctx = ctxSupplier.get();
-        ctx.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> DgClientPacketExecutor.handleRequest(msg)));
-        ctx.setPacketHandled(true);
+    public static void handle(DgS2CClientOpRequestPacket msg, IPayloadContext ctx) {
+        if (FMLEnvironment.dist == Dist.CLIENT) {
+            ctx.enqueueWork(() -> DgClientPacketExecutor.handleRequest(msg));
+        }
     }
 }

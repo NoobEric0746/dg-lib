@@ -8,8 +8,8 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.slf4j.Logger;
 
 import java.io.InputStream;
@@ -70,7 +70,7 @@ public class QrCodeScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
-        this.renderBackground(guiGraphics);
+        super.render(guiGraphics, pMouseX, pMouseY, pPartialTick);
 
         guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 20, 0xFFFFFF);
 
@@ -91,7 +91,6 @@ public class QrCodeScreen extends Screen {
 
         guiGraphics.drawCenteredString(this.font, "Press ESC to close", this.width / 2, this.height - 20, 0x666666);
 
-        super.render(guiGraphics, pMouseX, pMouseY, pPartialTick);
     }
 
     @Override

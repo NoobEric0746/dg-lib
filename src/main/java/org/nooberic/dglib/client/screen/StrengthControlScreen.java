@@ -7,8 +7,8 @@ import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.nooberic.dglib.Config;
 import org.nooberic.dglib.api.DgLibApi;
 import org.nooberic.dglib.service.DeviceStatus;
@@ -93,7 +93,7 @@ public class StrengthControlScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
-        this.renderBackground(guiGraphics);
+        super.render(guiGraphics, pMouseX, pMouseY, pPartialTick);
         guiGraphics.drawCenteredString(this.font, "DG-LAB 控制面板", this.width / 2, 12, 0xFFFFFF);
         guiGraphics.drawCenteredString(this.font, "强度上限请在手机端修改", this.width / 2, 28, 0x888888);
         guiGraphics.drawCenteredString(this.font,
@@ -103,7 +103,6 @@ public class StrengthControlScreen extends Screen {
                 "模组可以读取这些值来实现更精准的强度控制(也可能没有这样做) : )",
                 this.width / 2, this.height - 50, 0x888888);
 
-        super.render(guiGraphics, pMouseX, pMouseY, pPartialTick);
     }
 
     @Override

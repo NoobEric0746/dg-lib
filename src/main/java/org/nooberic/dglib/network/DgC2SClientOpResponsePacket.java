@@ -2,12 +2,24 @@ package org.nooberic.dglib.network;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import org.nooberic.dglib.dglib;
 import org.nooberic.dglib.multiplayer.DgServerCoyoteApi;
 
-import java.util.function.Supplier;
 
-public class DgC2SClientOpResponsePacket {
+public class DgC2SClientOpResponsePacket implements CustomPacketPayload {
+    public static final Type<DgC2SClientOpResponsePacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(dglib.MODID, "client_op_response"));
+    public static final StreamCodec<FriendlyByteBuf, DgC2SClientOpResponsePacket> STREAM_CODEC =
+            StreamCodec.of((buffer, message) -> encode(message, buffer), DgC2SClientOpResponsePacket::decode);
+
+    @Override
+    public Type<DgC2SClientOpResponsePacket> type() {
+        return TYPE;
+    }
+
     private final long requestId;
     private final boolean success;
     private final boolean paired;
@@ -129,12 +141,9 @@ public class DgC2SClientOpResponsePacket {
         );
     }
 
-    public static void handle(DgC2SClientOpResponsePacket msg, Supplier<NetworkEvent.Context> ctxSupplier) {
-        NetworkEvent.Context ctx = ctxSupplier.get();
-        ServerPlayer sender = ctx.getSender();
-        if (sender != null) {
+    public static void handle(DgC2SClientOpResponsePacket msg, IPayloadContext ctx) {
+        if (ctx.player() instanceof ServerPlayer sender) {
             ctx.enqueueWork(() -> DgServerCoyoteApi.get().handleClientResponse(sender, msg));
         }
-        ctx.setPacketHandled(true);
     }
 }

@@ -1,8 +1,8 @@
 package org.nooberic.dglib.service;
 
 import com.mojang.logging.LogUtils;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.loading.FMLEnvironment;
 import org.nooberic.dglib.Config;
 import org.nooberic.dglib.client.notification.ClientDisconnectNotifier;
 import org.nooberic.dglib.client.notification.ClientPairingNotifier;
@@ -448,7 +448,9 @@ public class DgLabServiceImpl implements DgLabService {
                     targetId = tid;
                     state = ConnectionState.PAIRED;
                     LOGGER.info("DG-LAB paired successfully! targetId: {}", targetId);
-                    DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientPairingNotifier.onPairedSuccess());
+                    if (FMLEnvironment.dist == Dist.CLIENT) {
+                        ClientPairingNotifier.onPairedSuccess();
+                    }
                 } else if (msg.isEmpty() || "targetId".equals(msg)) {
                     LOGGER.info("DG-LAB awaiting APP binding (clientId assigned)");
                 } else {
@@ -461,7 +463,9 @@ public class DgLabServiceImpl implements DgLabService {
                 targetId = "";
                 state = ConnectionState.CONNECTED;
                 LOGGER.info("DG-LAB connection broken, awaiting re-pair");
-                DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientDisconnectNotifier.onDeviceDisconnected());
+                if (FMLEnvironment.dist == Dist.CLIENT) {
+                    ClientDisconnectNotifier.onDeviceDisconnected();
+                }
                 return;
             }
 

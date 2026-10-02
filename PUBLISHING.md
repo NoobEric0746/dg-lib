@@ -4,10 +4,11 @@
 
 ## 0. 发布前约定
 
-此目录目标为 Minecraft 1.21.1 / NeoForge，需先完成源码迁移并验证构建。当前版本号沿用原 Forge 项目；首次发布前应确定独立的 NeoForge 版本或坐标，避免覆盖已有 Forge 产物。
+此目录目标为 Minecraft 1.21.1 / NeoForge，使用 Java 21 构建。
 
 - 发布仓库当前的 `build.gradle` 已经改成只发布 `jar` 和 `sourcesJar`，不会再把 NeoForge 开发态依赖写进发布 POM。
 - 发布产物的 Maven 根目录来自 `build/repo`。
+- 发布版本使用 `<mod_version>-<minecraft_version>`（例如 `1.3.3-1.21.1`），JAR 文件名、POM 坐标和 Maven 版本目录统一使用该版本，避免不同 MC 版本互相覆盖。模组内的版本仍为 `mod_version`。
 - `page` 分支用于承载对外访问的 Maven 仓库内容。
 
 ## 1. 更新代码
