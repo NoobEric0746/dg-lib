@@ -1,6 +1,17 @@
-# DG-LAB Lib - Minecraft Forge 模组
+# DG-LAB Lib - Minecraft NeoForge 模组
 
-一个用于 Minecraft Forge 1.20.1 的 DG-LAB 设备控制库，通过 WebSocket 连接到 DG-LAB 后端，支持设备配对和强度控制。
+一个用于 Minecraft NeoForge 1.21.1 的 DG-LAB 设备控制库，通过 WebSocket 连接到 DG-LAB 后端，支持设备配对和强度控制。
+
+## IDEA 项目导入
+
+此目录使用 Minecraft `1.21.1`、NeoForge `21.1.252`、ModDevGradle `2.0.107` 和 Gradle Wrapper `8.14.3`，Java 工具链为 `21`。
+
+1. 在 IDEA 中打开本目录 `1.21.1neo`，按 Gradle 项目导入。
+2. 将 Project SDK 和 Gradle JVM 设为 JDK 21，Gradle distribution 选择 Wrapper。
+3. 重新加载 Gradle 项目。首次导入需要联网解析插件、NeoForge 和 Minecraft 依赖。
+4. ModDevGradle 会生成客户端、服务端、GameTest 和数据生成运行配置。
+
+当前阶段仅迁移项目配置，Java 源码仍来自 Forge 1.20.1，需要后续适配后才能编译和启动游戏。下方依赖示例用于后续 NeoForge 产物；现有 Maven 仓库中的 `1.3.3` 不代表已发布 NeoForge 版本。
 
 ## 发布/依赖信息
 
@@ -8,11 +19,11 @@
 - Artifact ID：`dglib`
 - Mod ID：`dglib`
 - 当前版本：`1.3.3`
-- 兼容版本：Minecraft `1.20.1` / Forge `47.4.20`
+- 兼容版本：Minecraft `1.21.1` / NeoForge `21.1.252`
 
 ### 版本说明
 
-- 当前版本为稳定版本：`1.3.3`
+- 当前模组版本号沿用 `1.3.3`；此目录正在迁移到 NeoForge，尚未完成源码适配及构建验证。
 
 ### 作为其他模组的依赖
 
@@ -21,7 +32,7 @@
 - 编译期：`compileOnly`
 - 运行期：`runtimeOnly`
 
-如果你希望强制前置，则在依赖方的 `mods.toml` 中声明 `mandatory=true`。
+如果你希望强制前置，则在依赖方的 `neoforge.mods.toml` 中声明 `type="required"`。
 
 #### Gradle 依赖示例
 
@@ -33,17 +44,17 @@ repositories {
 }
 
 dependencies {
-    compileOnly fg.deobf("org.nooberic:dglib:1.3.3")
-    runtimeOnly fg.deobf("org.nooberic:dglib:1.3.3")
+    compileOnly "org.nooberic:dglib:1.3.3"
+    runtimeOnly "org.nooberic:dglib:1.3.3"
 }
 ```
 
-#### 依赖方 `mods.toml` 示例
+#### 依赖方 `neoforge.mods.toml` 示例
 
 ```toml
 [[dependencies.yourmodid]]
 modId = "dglib"
-mandatory = true
+type = "required"
 versionRange = "[1.3.3,)"
 ordering = "AFTER"
 side = "BOTH"
@@ -63,7 +74,7 @@ side = "BOTH"
 
 ### 给其他开发者的接入教程
 
-如果你正在编写另一个 Forge `1.20.1` 模组，并希望把 `DG Lib` 作为前置库接入，可以按下面步骤配置。
+如果你正在编写另一个 NeoForge `1.21.1` 模组，并希望把 `DG Lib` 作为前置库接入，可以按下面步骤配置。
 
 #### 第一步：在 `build.gradle` 添加 Maven 仓库
 
@@ -79,8 +90,8 @@ repositories {
 
 ```groovy
 dependencies {
-    compileOnly fg.deobf("org.nooberic:dglib:1.3.3")
-    runtimeOnly fg.deobf("org.nooberic:dglib:1.3.3")
+    compileOnly "org.nooberic:dglib:1.3.3"
+    runtimeOnly "org.nooberic:dglib:1.3.3"
 }
 ```
 
@@ -89,12 +100,12 @@ dependencies {
 - `compileOnly`：用于编译时引用 API
 - `runtimeOnly`：用于开发运行时把 `DG Lib` 一起加载进游戏
 
-#### 第三步：在你的 `mods.toml` 声明前置依赖
+#### 第三步：在你的 `neoforge.mods.toml` 声明前置依赖
 
 ```toml
 [[dependencies.yourmodid]]
 modId = "dglib"
-mandatory = true
+type = "required"
 versionRange = "[1.3.3,)"
 ordering = "AFTER"
 side = "BOTH"
@@ -761,7 +772,7 @@ wsUrl = "wss://ws.dungeon-lab.cn/"
 
 ## 事件和回调
 
-当前版本通过命令系统和游戏聊天提供反馈。如需集成事件系统，请参考 Forge 事件总线的使用。
+当前版本通过命令系统和游戏聊天提供反馈。如需集成事件系统，请参考 NeoForge 事件总线的使用。
 
 ## 状态代码
 
@@ -800,7 +811,7 @@ wsUrl = "wss://ws.dungeon-lab.cn/"
 如果你要在自己的模组中使用 DG Lib，需要：
 
 1. 添加模组依赖配置（gradle 中）
-2. 在 `src/main/resources/META-INF/mods.toml` 中声明依赖
+2. 在 `src/main/resources/META-INF/neoforge.mods.toml` 中声明依赖
 
 ## 许可证
 
@@ -811,4 +822,4 @@ wsUrl = "wss://ws.dungeon-lab.cn/"
 如遇到问题，请：
 1. 检查 `logs/latest.log` 中的错误信息
 2. 确保 WebSocket 后端正常运行
-3. 验证 Minecraft 版本为 `1.20.1`、Forge 版本为 `47.4.20`。
+3. 验证 Minecraft 版本为 `1.21.1`、NeoForge 版本为 `21.1.252`。

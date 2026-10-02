@@ -4,7 +4,9 @@
 
 ## 0. 发布前约定
 
-- 发布仓库当前的 `build.gradle` 已经改成只发布 `jar` 和 `sourcesJar`，不会再把 Forge 开发态依赖写进发布 POM。
+此目录目标为 Minecraft 1.21.1 / NeoForge，需先完成源码迁移并验证构建。当前版本号沿用原 Forge 项目；首次发布前应确定独立的 NeoForge 版本或坐标，避免覆盖已有 Forge 产物。
+
+- 发布仓库当前的 `build.gradle` 已经改成只发布 `jar` 和 `sourcesJar`，不会再把 NeoForge 开发态依赖写进发布 POM。
 - 发布产物的 Maven 根目录来自 `build/repo`。
 - `page` 分支用于承载对外访问的 Maven 仓库内容。
 
@@ -52,11 +54,11 @@
 
 你要确认：
 
-- POM 中没有 `net.minecraftforge:forge`
+- POM 中没有 `net.neoforged:neoforge`
 - POM 中没有 `*_mapped_official_*`
 - 发布目录下确实生成了当前版本的 `jar`、`pom`、`sourcesJar`
 
-如果以后又看到 Forge 开发态依赖出现在发布元数据里，说明发布配置被改回了不安全的形式，需要先修 `build.gradle` 再继续发布。
+如果以后又看到 NeoForge 开发态依赖出现在发布元数据里，说明发布配置被改回了不安全的形式，需要先修 `build.gradle` 再继续发布。
 
 ## 4. 同步到 page 分支
 
@@ -91,8 +93,8 @@ repositories {
 }
 
 dependencies {
-    compileOnly fg.deobf("org.nooberic:dglib:1.0.1")
-    runtimeOnly fg.deobf("org.nooberic:dglib:1.0.1")
+    compileOnly "org.nooberic:dglib:1.0.1"
+    runtimeOnly "org.nooberic:dglib:1.0.1"
 }
 ```
 
@@ -104,7 +106,7 @@ dependencies {
 
 - 仓库地址可以访问
 - 依赖方能正常拉取新版本
-- 不会再解析到 `net.minecraftforge:forge:..._mapped_official_1.20.1`
+- 不会再解析到 `net.neoforged:neoforge:...`
 - 游戏里或者依赖工程里能正常加载 `org.nooberic.dglib.api.DgLibApi`
 
 ## 7. 每次更新时的固定顺序
@@ -122,7 +124,7 @@ dependencies {
 
 ## 8. 常见问题
 
-### 问题：发布出来的 POM 里又出现 Forge 依赖
+### 问题：发布出来的 POM 里又出现 NeoForge 依赖
 
 通常是发布配置又回到了把 Java 组件直接导出的方式。先检查 `build.gradle` 的 `publishing` 块，确认仍然是显式发布 `jar` 和 `sourcesJar`，而不是 `from components.java`。
 

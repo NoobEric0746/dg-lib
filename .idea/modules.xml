@@ -2,8 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/dg-lib.main.iml" filepath="$PROJECT_DIR$/.idea/modules/dg-lib.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/dg-lib.test.iml" filepath="$PROJECT_DIR$/.idea/modules/dg-lib.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/dg-lib-1.21.1-neoforge.main.iml" filepath="$PROJECT_DIR$/.idea/modules/dg-lib-1.21.1-neoforge.main.iml" />
     </modules>
   </component>
 </project>

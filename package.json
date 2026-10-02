@@ -1,7 +1,7 @@
 {
   "name": "dg-lib-mock-backend",
   "version": "1.0.0",
-  "description": "Mock DG-LAB WebSocket backend for Forge mod testing",
+  "description": "Mock DG-LAB WebSocket backend for NeoForge mod testing",
   "main": "mock-backend.js",
   "scripts": {
     "start": "node mock-backend.js"
